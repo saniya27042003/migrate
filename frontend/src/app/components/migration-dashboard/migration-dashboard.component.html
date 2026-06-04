@@ -1,0 +1,125 @@
+<!-- <div class="dashboard">
+    <h2>Migration Dashboard</h2>
+
+    <section>
+        <h3>Foundation Tables</h3>
+        <div class="grid">
+            <button *ngFor="let table of foundationTables" (click)="startMigration(table)"
+                [disabled]="isMigrated(table)" [class.success]="isMigrated(table)">
+                {{ isMigrated(table) ? '✅ ' + table : table }}
+            </button>
+        </div>
+    </section>
+
+    <div class="main-body">
+        <aside class="sidebar">
+            <h3>Core Entities</h3>
+            <button *ngFor="let table of coreEntities" [class.active]="selectedParent === table"
+                [class.success]="isMigrated(table)" (click)="selectedParent = table">
+                {{ isMigrated(table) ? '✅ ' + table : table }}
+            </button>
+        </aside>
+
+        <div class="detail-panel" *ngIf="selectedParent">
+            <h3>Dependencies for: {{ selectedParent }}</h3>
+
+            <div class="dependency-grid">
+                <button *ngFor="let child of dependencyMap[selectedParent]" (click)="startMigration(child)"
+                    [disabled]="isMigrated(child)" [class.success]="isMigrated(child)">
+                    {{ isMigrated(child) ? '✅ Migrated ' + child : 'Migrate ' + child }}
+                </button>
+            </div>
+
+            <hr>
+
+            <button class="exec-btn" (click)="startMigration(selectedParent)"
+                [disabled]="!canMigrateMaster(selectedParent) || isMigrated(selectedParent)"
+                [class.success]="isMigrated(selectedParent)">
+
+                <ng-container *ngIf="isMigrated(selectedParent)">
+                    ✅ {{ selectedParent }} Fully Migrated
+                </ng-container>
+
+                <ng-container *ngIf="!isMigrated(selectedParent) && canMigrateMaster(selectedParent)">
+                    Execute Full {{ selectedParent }} Migration
+                </ng-container>
+
+                <ng-container *ngIf="!isMigrated(selectedParent) && !canMigrateMaster(selectedParent)">
+                    🔒 Complete Dependencies to Unlock {{ selectedParent }}
+                </ng-container>
+
+            </button>
+        </div>
+    </div>
+</div> -->
+
+
+<div class="dashboard">
+    <h2>Migration Dashboard</h2>
+
+    <section>
+        <h3>Foundation Tables</h3>
+        <div class="grid">
+            <button *ngFor="let table of foundationTables" (click)="selectedParent = table; checkTableSync(table)"
+                [class.active]="selectedParent === table" [class.success]="isMigrated(table)">
+                {{ isMigrated(table) ? '✅ ' + table : table }}
+            </button>
+        </div>
+    </section>
+
+    <div class="main-body">
+        <aside class="sidebar">
+            <h3>Core Entities</h3>
+            <button *ngFor="let table of coreEntities" [class.active]="selectedParent === table"
+                [class.success]="isMigrated(table)" (click)="selectedParent = table; checkTableSync(table)">
+                {{ isMigrated(table) ? '✅ ' + table : table }}
+            </button>
+        </aside>
+
+        <div class="detail-panel" *ngIf="selectedParent">
+            <div *ngIf="validationError" class="alert-warning"
+                style="color: red; font-weight: bold; margin-bottom: 10px;">
+                ⚠️ {{ validationError }}
+            </div>
+
+            <h3>Dependencies for: {{ selectedParent }}</h3>
+
+            <div class="dependency-grid">
+                <button *ngFor="let child of dependencyMap[selectedParent]" (click)="startMigration(child)"
+                    [disabled]="isMigrated(child)" [class.success]="isMigrated(child)">
+                    {{ isMigrated(child) ? '✅ Migrated ' + child : 'Migrate ' + child }}
+                </button>
+            </div>
+
+            <hr>
+
+            <button class="exec-btn" (click)="startMigration(selectedParent)"
+                [disabled]="!!validationError || !canMigrateMaster(selectedParent) || isMigrated(selectedParent)"
+                [class.success]="isMigrated(selectedParent)">
+
+                <ng-container *ngIf="isMigrated(selectedParent)">
+                    ✅ {{ selectedParent }} Fully Migrated
+                </ng-container>
+
+                <ng-container *ngIf="!isMigrated(selectedParent) && !!validationError">
+                    Fix Data Mismatch First
+                </ng-container>
+
+                <ng-container
+                    *ngIf="!isMigrated(selectedParent) && !validationError && canMigrateMaster(selectedParent)">
+                    Execute Full {{ selectedParent }} Migration
+                </ng-container>
+
+                <ng-container
+                    *ngIf="!isMigrated(selectedParent) && !validationError && !canMigrateMaster(selectedParent)">
+                    🔒 Complete Dependencies to Unlock {{ selectedParent }}
+                </ng-container>
+            </button>
+        </div>
+    </div>
+
+    <div *ngIf="isLoading" class="spinner-overlay">
+        <div class="spinner"></div>
+        <p>Migrating... {{ progress }}%</p>
+    </div>
+</div>
