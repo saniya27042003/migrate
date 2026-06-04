@@ -15,11 +15,11 @@ export const config: TypeOrmModuleOptions = {
   // host: '82.112.235.98',
 
   username: 'postgres', //sidhanerli username
-  password: '1234', //sidhanerli password
+  password: '123456789', //sidhanerli password
   port: 5432,
   host: 'localhost',
 
-  database: 'nirmiti_db_backup',
+  database: 'nirmiti',
 
   // database: 'SANJAYSINH',
   // database: 'datta_pargaon',

@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+/* eslint-disable prettier/prettier */
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { MigrateService } from './migrate.service'
 
 @Controller('migrate')
@@ -499,5 +500,13 @@ export class MigrateController {
     @Post('check-sync')
     async checkSync(@Body() body: { tableName: string, dependencies: string[] }) {
         return await this._service.getSyncStatus(body.tableName, body.dependencies);
+    }
+
+
+
+    @Get('check-single-sync/:tableName')
+    async checkSingleSync(@Param('tableName') tableName: string) {
+        // This calls the single-table check method we discussed earlier
+        return await this._service.checkSingleTableSync(tableName);
     }
 }

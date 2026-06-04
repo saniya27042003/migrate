@@ -20,4 +20,10 @@ export class MigrationService {
       { tableName, dependencies }
     );
   }
+
+
+  checkIfTableIsSynced(tableName: string): Observable<{ isSynced: boolean, oracleCount: number, pgCount: number }> {
+    return this.http.get<{ isSynced: boolean, oracleCount: number, pgCount: number }>(`${this.baseUrl}/check-single-sync/${tableName}`);
+  }
+
 }

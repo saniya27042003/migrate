@@ -334,7 +334,7 @@ export class MigrateService {
   password = "1234"
   // // user = "APPACHOPDE"
   // // password = "APPACHOPDE"
-  SID = "FREEPDB1"
+  SID = "XEPDB1"
 
 
   //   private mssqlConfig = {
@@ -12683,7 +12683,9 @@ export class MigrateService {
 
 
   }
-  //method that counts the rows of oracle and postgres and return if they are in sync or not
+
+
+  // //method that counts the rows of oracle and postgres and return if they are in sync or not
   async getSyncStatus(tableName: string, dependencies: string[]): Promise<{ isSynced: boolean, mismatched: string[] }> {
     let connection = await oracledb.getConnection({
       user: this.user,
@@ -12713,5 +12715,38 @@ export class MigrateService {
       mismatched: mismatched
     };
   }
+
+
+
+// Backend: Method to check if a single table's row count matches
+// Update this method inside migrate.service.ts
+  async checkSingleTableSync(tableName: string): Promise<{ isSynced: boolean, oracleCount: number, pgCount: number }> {
+    let connection = await oracledb.getConnection({
+      user: this.user,
+      password: this.password,
+      connectString: this.connectionString
+    });
+
+    try {
+      const oracleResult = await connection.execute(`SELECT COUNT(*) as cnt FROM ${tableName}`);
+      const oracleCount = Number(oracleResult.rows[0][0]);
+      
+      // Assuming this.connection is your Postgres connection
+      const pgCount = await this.connection.getRepository(tableName).count();
+
+      // Return the numbers along with the true/false status!
+      return { 
+        isSynced: oracleCount === pgCount,
+        oracleCount: oracleCount,
+        pgCount: pgCount
+      }; 
+    } catch (error) {
+      console.error(`Error checking sync for ${tableName}:`, error);
+      throw error;
+    } finally {
+      await connection.close();
+    }
+  }
+
 
 }
