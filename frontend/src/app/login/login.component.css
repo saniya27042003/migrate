@@ -64,7 +64,6 @@
   justify-content: center;
   text-align: center;
   z-index: 10;
-  margin-right: 100px;
 }
 
 .logo-img {
@@ -117,30 +116,30 @@
 .login-right {
   flex: 1;
   display: flex;
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
   z-index: 10;
-  margin-left: -80px;
 }
 
 .login-card {
   background: linear-gradient(to bottom, #611717, #0f2443);
   border-radius: 16px;
-  padding: 50px 45px;
+  /* Changed padding: Top is now 35px, Right/Left are 45px, Bottom is 45px */
+  padding: 35px 45px 45px 45px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 5px 5px 50px rgba(17, 145, 139, 0.25);
   width: 100%;
   max-width: 420px;
 }
 
 .welcome-title {
-  font-size: 20px;
-  font-weight: bold;
+  font-size: 22px;
+  font-weight: 800;
   letter-spacing: 2.5px;
   text-transform: uppercase;
   text-align: center;
-  color: #f0f0f0;
-  margin-bottom: 40px;
-  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 25px; /* Reduced from 40px to tighten up the header area */
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 /* FORM CONTROLS */
@@ -155,38 +154,56 @@
   margin-bottom: 10px;
   cursor: pointer;
   font-weight: 600;
-  color: #e0e0e0;
+  color: #ffffff;
   font-size: 14px;
+  letter-spacing: 0.5px;
 }
 
 .form-icon {
   width: 20px;
   height: 20px;
-  color: #b0b0b0;
+  color: #ffffff;
   stroke: currentColor;
   flex-shrink: 0;
 }
 
+/* Base Input Styling */
 .form-input {
   width: 100%;
-  padding: 10px 0;
+  padding: 14px 16px;
   border: none;
-  border-bottom: 2.5px solid #8080a0;
-  background-color: transparent;
-  color: #f0f0f0;
+  border-bottom: 2px solid #ffffff; /* Crisp white bottom line */
+  background-color: transparent !important; /* Forces the box to be transparent */
+  color: #ffffff; /* White text */
   font-size: 15px;
-  transition: border-color 0.3s ease;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
+/* Faded Placeholder Text */
 .form-input::placeholder {
-  color: #707080;
+  color: rgba(255, 255, 255, 0.5);
 }
 
+/* Glowing effect when clicked */
 .form-input:focus {
   outline: none;
-  border-bottom-color: #00d4d4;
-  color: white;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-bottom-color: #ffffff;
 }
+
+/* --- THE FIX FOR BROWSER AUTOFILL --- */
+/* This stops Chrome/Edge from turning the password box white */
+.form-input:-webkit-autofill,
+.form-input:-webkit-autofill:hover,
+.form-input:-webkit-autofill:focus,
+.form-input:-webkit-autofill:active{
+    -webkit-box-shadow: 0 0 0 30px #2a1b25 inset !important; /* Blends with your dark red background */
+    -webkit-text-fill-color: #ffffff !important; /* Keeps the autofilled text white */
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+
 
 .password-wrapper {
   position: relative;
@@ -196,26 +213,31 @@
 
 .toggle-password {
   position: absolute;
-  right: 8px;
+  right: 16px;
   background: none;
   border: none;
   cursor: pointer;
   font-size: 18px;
-  padding: 4px 10px;
-  color: #a0a0a0;
-  transition: color 0.2s;
+  padding: 4px;
+  color: #ffffff;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .toggle-password:hover {
-  color: #d0d0d0;
+  opacity: 1;
 }
 
 .error-text {
   display: block;
   color: #ff6b6b;
   font-size: 12px;
-  margin-top: 6px;
+  margin-top: 8px;
   font-weight: 500;
+  text-align: left;
 }
 
 .error-message {
@@ -311,19 +333,12 @@
   .login-container {
     padding: 40px 60px;
   }
-
-  .login-left {
-    margin-right: 60px;
-  }
-
   .logo-img {
     width: 240px;
   }
-
   .company-name {
     font-size: 28px;
   }
-
   .login-card {
     max-width: 380px;
     padding: 40px 35px;
@@ -334,30 +349,21 @@
   .login-container {
     padding: 30px 40px;
   }
-
-  .login-left {
-    margin-right: 40px;
-  }
-
   .logo-img {
     width: 220px;
   }
-
   .company-name {
     font-size: 26px;
     margin-top: 24px;
   }
-
   .login-card {
     max-width: 360px;
     padding: 35px 32px;
   }
-
   .welcome-title {
     font-size: 18px;
     margin-bottom: 32px;
   }
-
   .btn {
     min-height: 40px;
     font-size: 13px;
@@ -370,31 +376,23 @@
     justify-content: center;
     padding: 30px 20px;
   }
-
   .login-left {
-    margin-right: 0;
     margin-bottom: 50px;
   }
-
   .login-right {
-    justify-content: center;
     width: 100%;
   }
-
   .login-card {
     max-width: 400px;
     width: 100%;
     padding: 40px 30px;
   }
-
   .logo-img {
     width: 200px;
   }
-
   .company-name {
     font-size: 24px;
   }
-
   .company-desc {
     font-size: 14px;
   }
@@ -404,53 +402,24 @@
   .login-container {
     padding: 20px 15px;
   }
-
   .login-left {
     margin-bottom: 35px;
   }
-
   .logo-img {
     width: 160px;
   }
-
   .company-name {
     font-size: 20px;
   }
-
   .login-card {
-    max-width: 100%;
     padding: 30px 20px;
   }
-
   .welcome-title {
     font-size: 16px;
     margin-bottom: 25px;
   }
-
   .btn {
     min-height: 38px;
     font-size: 12px;
   }
-}
-
-#googlebutton {
-  background-color: rgb(248, 192, 51);
-  color: black;
-}
-
-#googlebutton:hover {
-  background-color: rgb(237, 170, 1);
-}
-
-#LoginButton{
-    background-color: rgb(17, 156, 211);
-}
-#resetButton{
-    background-color: #da133e;
-}
-#resetButton:hover{
-    background-color: #b1122c;
-}
-#LoginButton:hover{
-    background-color: rgb(10, 119, 161);
 }
