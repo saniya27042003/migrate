@@ -15,7 +15,7 @@ export const config: TypeOrmModuleOptions = {
   // host: '82.112.235.98',
 
   username: 'postgres', //sidhanerli username
-  password: '123456789', //sidhanerli password
+  password: 'swikar1637', //sidhanerli password
   port: 5432,
   host: 'localhost',
 

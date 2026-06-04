@@ -334,7 +334,7 @@ export class MigrateService {
   password = "1234"
   // // user = "APPACHOPDE"
   // // password = "APPACHOPDE"
-  SID = "XEPDB1"
+  SID = "FREEPDB1"
 
 
   //   private mssqlConfig = {
@@ -356,7 +356,7 @@ export class MigrateService {
   flag = 0
   BRANCH_CODE = 106
   // connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = 1521))(CONNECT_DATA =(SID=${this.SID} )))`
-  connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = 1521))(CONNECT_DATA =(SERVICE_NAME=${this.SID} )))`
+  connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.137.144)(PORT = 1521))(CONNECT_DATA =(SERVICE_NAME=${this.SID} )))`
   // connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = BANK30)(PORT = 1521))(CONNECT_DATA =(SID=${this.SID} )))`
   // connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = bank7)(PORT = 1521))(CONNECT_DATA =(SID=${this.SID} )))`
   // connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = 1521))(CONNECT_DATA =(SID=${this.SID} )))`
