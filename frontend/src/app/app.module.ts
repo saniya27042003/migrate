@@ -9,12 +9,14 @@ import { AppComponent } from './app.component';
 import { MigrationDashboardComponent } from './components/migration-dashboard/migration-dashboard.component';
 import { HttpClientModule } from '@angular/common/http';
 import { LoginComponent } from './login/login.component';
+import { DatabaseConnectionComponent } from './database-connection/database-connection.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     MigrationDashboardComponent,
-    LoginComponent
+    LoginComponent,
+    DatabaseConnectionComponent
   ],
   imports: [
     BrowserModule,

@@ -1,0 +1,206 @@
+/* Container & Layout */
+.db-setup-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
+  background-color: #1a1d24; /* Main dark background */
+  min-height: 100vh;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+}
+
+.panel {
+  background-color: #242832; /* Panel background */
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  border: 1px solid #333845;
+}
+
+.source-panel {
+  width: 350px;
+}
+
+.target-panel {
+  width: 550px;
+}
+
+.panel-title {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  margin-top: 0;
+  margin-bottom: 2rem;
+  color: #ffffff;
+}
+
+/* Source Panel Specifics */
+.active-db-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.db-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  background-color: #1e2128;
+  border: 2px solid #333845;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.active-icon {
+  border-color: #00e676; /* Neon green highlight */
+  box-shadow: 0 0 15px rgba(0, 230, 118, 0.1);
+}
+
+/* Target Panel Specifics */
+.db-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  justify-content: center;
+}
+
+.db-card {
+  background-color: #1e2128;
+  border: 1px solid #333845;
+  width: 140px;
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.db-card.active {
+  border-color: #00e676;
+  background-color: rgba(0, 230, 118, 0.05);
+}
+
+.card-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Inputs & Forms */
+.input-grid {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.input-grid.list-col {
+  grid-template-columns: 1fr; /* 1 column for left panel */
+}
+
+.input-grid.three-col {
+  grid-template-columns: repeat(2, 1fr); /* 2 columns for right panel */
+}
+
+input {
+  background-color: #1e2128;
+  border: 1px solid #333845;
+  color: #fff;
+  padding: 0.85rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+input:focus {
+  border-color: #00e676;
+}
+
+input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Center Arrow */
+.arrow-divider {
+  font-size: 2.5rem;
+  color: #666;
+  padding: 0 1rem;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.btn {
+  flex: 1;
+  padding: 0.85rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+}
+
+.btn-connect {
+  background-color: transparent;
+  color: #00e676;
+  border: 1px solid #00e676;
+}
+
+.btn-connect:hover:not(:disabled) {
+  background-color: rgba(0, 230, 118, 0.1);
+}
+
+.btn-cancel {
+  background-color: transparent;
+  color: #ff4d4d;
+  border: 1px solid #ff4d4d;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background-color: rgba(255, 77, 77, 0.1);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Error Alert Box */
+.error-alert {
+  background-color: rgba(255, 77, 77, 0.1);
+  border: 1px solid #ff4d4d;
+  color: #ff4d4d;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Spinner Animation */
+.spinner-icon {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}

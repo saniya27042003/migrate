@@ -9,12 +9,17 @@ export class MigrationService {
   // Your existing migration endpoint
   private baseUrl = 'http://localhost:7272/migrate';
 
-  // 🌟 NEW: The endpoint for your database connection controller
+  // The endpoint for your database connection controller
   private dbUrl = 'http://localhost:7272/database';
 
   constructor(private http: HttpClient) { }
 
-  // 🌟 NEW: Method to fetch the Oracle tables dynamically
+  // 🌟 NEW: Method to connect to either Postgres or Oracle
+  connectToDatabase(config: any): Observable<any> {
+    return this.http.post(`${this.dbUrl}/connect`, config);
+  }
+
+  // Method to fetch the Oracle tables dynamically
   fetchSourceTables(): Observable<{success: boolean, count: number, data: string[]}> {
     return this.http.get<{success: boolean, count: number, data: string[]}>(`${this.dbUrl}/tables/oracle`);
   }

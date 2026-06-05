@@ -35,19 +35,19 @@ export class MigrationDashboardComponent implements OnInit {
 
 
 
-    'ACCOTRAN': ['ACMASTER'],
-    'PIGMYTRAN': ['PGMASTER'],
-    'SHARETRAN': ['SHMASTER'],
-    'DAILYSHRTRAN': ['SHMASTER'],
-    'LOANTRAN': ['LNMASTER'],
-    'DEPOTRAN': ['DPMASTER'],
-    'DEPOCLOSETRAN': ['DPMASTER'],
-    'DAILYTRAN': ['ACMASTER'], // Assuming daily transactions tie to accounts
-    'HISTORYTRAN': ['ACMASTER'],
-    'INTERESTTRAN': ['ACMASTER', 'DPMASTER', 'LNMASTER'], // Might depend on multiple
-    'HISTORYDIVIDEND': ['SHMASTER'],
-    'INTHISTORYTRAN': ['ACMASTER'],
-    'RENEWALHISTORY': ['DPMASTER', 'LNMASTER'],
+    'ACCOTRAN': [],
+    'PIGMYTRAN': [],
+    'SHARETRAN': [],
+    'DAILYSHRTRAN': [],
+    'LOANTRAN': [],
+    'DEPOTRAN': [],
+    'DEPOCLOSETRAN': [],
+    'DAILYTRAN': [], // Assuming daily transactions tie to accounts
+    'HISTORYTRAN': [],
+    'INTERESTTRAN': [], // Might depend on multiple
+    'HISTORYDIVIDEND': [],
+    'INTHISTORYTRAN': [],
+    'RENEWALHISTORY': [],
     'DEADSTOCKHEADER': []
   };
 

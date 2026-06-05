@@ -1,0 +1,58 @@
+<div class="db-setup-container">
+
+  <div class="panel source-panel">
+    <h3 class="panel-title">SOURCE DATABASE</h3>
+
+    <div class="active-db-display">
+      <div class="db-icon active-icon">
+        <span>🐘</span>
+      </div>
+      <h4>PostgreSQL</h4>
+    </div>
+
+    <div class="input-grid list-col">
+      <input type="text" placeholder="Database Name (e.g. NIRMITI)" [(ngModel)]="sourceConfig.database" [disabled]="isLoading">
+      <input type="text" placeholder="Host (e.g. localhost)" [(ngModel)]="sourceConfig.host" [disabled]="isLoading">
+      <input type="text" placeholder="Port (e.g. 5432)" [(ngModel)]="sourceConfig.port" [disabled]="isLoading">
+      <input type="text" placeholder="Username" [(ngModel)]="sourceConfig.username" [disabled]="isLoading">
+      <input type="password" placeholder="Password" [(ngModel)]="sourceConfig.password" [disabled]="isLoading">
+    </div>
+  </div>
+
+  <div class="arrow-divider">
+    <span>→</span>
+  </div>
+
+  <div class="panel target-panel">
+    <h3 class="panel-title">TARGET CONFIGURATION</h3>
+
+    <div *ngIf="errorMessage" class="error-alert">
+      ⚠️ {{ errorMessage }}
+    </div>
+
+    <div class="db-selection-grid">
+      <div class="db-card active">
+        <div class="card-icon">🗄️</div>
+        <span>Oracle</span>
+      </div>
+    </div>
+
+    <div class="input-grid three-col">
+      <input type="text" placeholder="Type" [(ngModel)]="targetConfig.type" readonly [disabled]="isLoading">
+      <input type="text" placeholder="Database (e.g. XEPDB1)" [(ngModel)]="targetConfig.database" [disabled]="isLoading">
+      <input type="text" placeholder="Host (e.g. localhost)" [(ngModel)]="targetConfig.host" [disabled]="isLoading">
+      <input type="text" placeholder="Port (e.g. 1521)" [(ngModel)]="targetConfig.port" [disabled]="isLoading">
+      <input type="text" placeholder="Username" [(ngModel)]="targetConfig.username" [disabled]="isLoading">
+      <input type="password" placeholder="Password" [(ngModel)]="targetConfig.password" [disabled]="isLoading">
+    </div>
+
+    <div class="action-buttons">
+      <button class="btn btn-connect" (click)="connect()" [disabled]="isLoading">
+        <span *ngIf="isLoading" class="spinner-icon">🔄</span>
+        {{ isLoading ? 'Connecting...' : 'Connect' }}
+      </button>
+      <button class="btn btn-cancel" (click)="cancel()" [disabled]="isLoading">Cancel</button>
+    </div>
+  </div>
+
+</div>
