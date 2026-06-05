@@ -1,14 +1,25 @@
-import { Injectable } from '@angular/core'; // Ensure this import is correct
+import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({
-  providedIn: 'root' // <--- This MUST be inside the @Injectable decorator
+  providedIn: 'root'
 })
 export class MigrationService {
+  // Your existing migration endpoint
   private baseUrl = 'http://localhost:7272/migrate';
 
+  // 🌟 NEW: The endpoint for your database connection controller
+  private dbUrl = 'http://localhost:7272/database';
+
   constructor(private http: HttpClient) { }
+
+  // 🌟 NEW: Method to fetch the Oracle tables dynamically
+  fetchSourceTables(): Observable<{success: boolean, count: number, data: string[]}> {
+    return this.http.get<{success: boolean, count: number, data: string[]}>(`${this.dbUrl}/tables/oracle`);
+  }
+
+  // --- Your Existing Methods Below ---
 
   migrateTable(tableName: string): Observable<any> {
     return this.http.post(`${this.baseUrl}/${tableName}`, {});
@@ -21,9 +32,7 @@ export class MigrationService {
     );
   }
 
-
   checkIfTableIsSynced(tableName: string): Observable<{ isSynced: boolean, oracleCount: number, pgCount: number }> {
     return this.http.get<{ isSynced: boolean, oracleCount: number, pgCount: number }>(`${this.baseUrl}/check-single-sync/${tableName}`);
   }
-
 }

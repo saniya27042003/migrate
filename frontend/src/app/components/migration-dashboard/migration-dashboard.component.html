@@ -69,11 +69,23 @@
 
     <div class="main-body">
         <aside class="sidebar">
-            <h3>Core Entities</h3>
-            <button *ngFor="let table of coreEntities" [class.active]="selectedParent === table"
-                [class.success]="isMigrated(table)" (click)="selectedParent = table; checkTableSync(table)">
-                {{ isMigrated(table) ? '✅ ' + table : table }}
-            </button>
+
+            <div class="sidebar-section">
+                <h3>Master Tables</h3>
+                <button *ngFor="let table of coreEntities" [class.active]="selectedParent === table"
+                    [class.success]="isMigrated(table)" (click)="selectedParent = table; checkTableSync(table)">
+                    {{ isMigrated(table) ? '✅ ' + table : table }}
+                </button>
+            </div>
+
+            <div class="sidebar-section" style="margin-top: 2rem;">
+                <h3>Transaction Tables</h3>
+                <button *ngFor="let table of transactionTables" [class.active]="selectedParent === table"
+                    [class.success]="isMigrated(table)" (click)="selectedParent = table; checkTableSync(table)">
+                    {{ isMigrated(table) ? '✅ ' + table : table }}
+                </button>
+            </div>
+
         </aside>
 
         <div class="detail-panel" *ngIf="selectedParent">
@@ -89,6 +101,9 @@
                     [disabled]="isMigrated(child)" [class.success]="isMigrated(child)">
                     {{ isMigrated(child) ? '✅ Migrated ' + child : 'Migrate ' + child }}
                 </button>
+                <div *ngIf="!dependencyMap[selectedParent] || dependencyMap[selectedParent].length === 0" style="color: gray; font-style: italic;">
+                    No dependencies required.
+                </div>
             </div>
 
             <hr>

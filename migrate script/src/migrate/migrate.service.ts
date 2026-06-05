@@ -171,6 +171,7 @@ const unidev = require('unidev');
 
 @Injectable()
 export class MigrateService {
+
   lndata: any;
   result1: any[];
   constructor(@InjectRepository(CATEGORYMASTER) private readonly CATEGORYMASTERService: Repository<CATEGORYMASTER>,
