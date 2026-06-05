@@ -108,12 +108,16 @@
 
             <hr>
 
-              <div *ngIf="isLoading" class="progress-box">
-                    <h4>Migrating {{ selectedParent }}...</h4>
-                    <div class="progress-container">
-                        <div class="progress-bar" [style.width.%]="progress"></div>
+              <div *ngIf="isLoading" class="spinner-overlay">
+                    <div class="progress-box">
+                        <h4>Migrating {{ selectedParent }}...</h4>
+
+                        <div class="progress-container">
+                            <div class="progress-bar" [style.width.%]="progress"></div>
+                        </div>
+
+                        <p>{{ progress }}%</p>
                     </div>
-                    <p>{{ progress }}%</p>
                 </div>
 
             <button class="exec-btn" (click)="startMigration(selectedParent)"
