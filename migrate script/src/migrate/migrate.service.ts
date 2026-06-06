@@ -165,6 +165,10 @@ import { SMSMAST } from '../entity/entity/SMSMAST.entity';
 import * as sql from 'mssql';
 
 import { transliterate } from './marathi-to-english.util';
+import { DbUserConfig } from 'src/connection/DbUserConfig';
+import { DynamicConnectionDto, OracleDynamicConnectionDto, PgDynamicConnectionDto } from 'src/connection/dto/connection.dto';
+import { initialize } from 'passport';
+import { OrmSet } from 'src/OrmSet';
 
 const unidev = require('unidev');
 
@@ -335,7 +339,9 @@ export class MigrateService {
   password = "1234"
   // // user = "APPACHOPDE"
   // // password = "APPACHOPDE"
-  SID = "XEPDB1"
+  SID = "FREEPDB1"
+  connectionByOracle : any
+  dataSourcePg : any
 
 
   //   private mssqlConfig = {
@@ -356,8 +362,76 @@ export class MigrateService {
   count = 0;
   flag = 0
   BRANCH_CODE = 106
+
+
+
+
+
+
+  async connectOracleDb(configDto: OracleDynamicConnectionDto , dto : PgDynamicConnectionDto) {
+    try {
+
+      const config = new DbUserConfig(
+        configDto.host,
+        configDto.port,
+        configDto.username,
+        configDto.password,
+        configDto.database
+
+        // configDto.service,
+      );
+
+      const ormSet = new OrmSet();
+      this.dataSourcePg = await ormSet.connectPostgresDb(dto);
+
+      // const dbConfig = {
+      //   host: config.getHost(),
+      //   port: config.getPort(),
+      //   user: config.getUser(),
+      //   password: config.getPassword(),
+      //   sid: config.getSid()
+      // }
+
+      this.connectionByOracle = await oracledb.getConnection({
+        user: config.getUser(),
+        password: config.getPassword(),
+        connectString: `${config.getHost()}:${config.getPort()}/${config.getSid()}`
+        // connectString: "localhost:1521/XEPDB1"
+      });
+
+
+
+
+
+    
+      console.log("IS CONNECTION SUCCEED",this.connectionByOracle)
+
+      // this.connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = ${config.getHost()})(PORT = ${config.getPort()}))(CONNECT_DATA =(SERVICE_NAME=${this.SID} )))`
+      // let result = await this.connectionByOracle.execute('select * from SCHEMAST ORDER BY S_APPL');
+
+
+      // let sql = `SELECT * FROM BANKUSER.SCHEMAST`;
+      // let sql = `SELECT * FROM ${config.getUser().toUpperCase()}.SCHEMAST`;
+
+      // let  binds = {};
+      // let  options = {
+      //   outFormat: oracledb.OUT_FORMAT_OBJECT,   
+      // };
+      // let result = await connection.execute(sql, binds, options);
+
+
+      // return result
+
+      return ''
+ 
+    } catch (error) {
+      throw new Error("Oracle Connection Failed ");
+    }
+  }
+
+  // result = await connection.execute(sql, binds, options);
   // connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = 1521))(CONNECT_DATA =(SID=${this.SID} )))`
-  connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = 1521))(CONNECT_DATA =(SERVICE_NAME=${this.SID} )))`
+  connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.137.159)(PORT = 1521))(CONNECT_DATA =(SERVICE_NAME=${this.SID} )))`
   // connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = BANK30)(PORT = 1521))(CONNECT_DATA =(SID=${this.SID} )))`
   // connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = bank7)(PORT = 1521))(CONNECT_DATA =(SID=${this.SID} )))`
   // connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = 1521))(CONNECT_DATA =(SID=${this.SID} )))`
@@ -536,7 +610,7 @@ export class MigrateService {
     // await this.TDSFORMSUBMIT()
     // await this.COMMISSIONSLAB()
 
-    await this.IDMASTER()
+    // await this.IDMASTER()
     // await this.TableData()
     // await this.ITEMMASTER()
 
@@ -642,9 +716,11 @@ export class MigrateService {
 
 
   async GUARANTERDETAILS() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from GUARANTERDETAILS`);
-    var data = await this.jsonConverter(result);
+  
+
+     let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await connection2.execute(`select * from GUARANTERDETAILS`)
+      let data = await this.jsonConverter(result);
 
     //get maxcount of row
     let datacount = await connection2.execute(`select count(*) as count from GUARANTERDETAILS`);
@@ -665,6 +741,9 @@ export class MigrateService {
     }
 
   }
+
+
+
 
   //syspara
   async SYSPARA() {
@@ -815,16 +894,22 @@ export class MigrateService {
     }
   }
 
-  //SCHEMAST
-  async SCHEMAST() {
+
+  async SCHEMAST(config: OracleDynamicConnectionDto,  dto : PgDynamicConnectionDto){
+    
+        // await this.connectOracleDb(config , dto)
     let queryRunner = await this.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-    try {
+
       try {
-        let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-        let result = await connection2.execute('select * from SCHEMAST ORDER BY S_APPL');
+        //oracle connect
+        // let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+        let result = await this.connectionByOracle.execute('select * from SCHEMAST ORDER BY S_APPL');
         let data = await this.jsonConverter(result);
+        // pgConnect 
+        const schemastRepo = this.dataSourcePg.getRepository(SCHEMAST);
+        // const customers = await customerRepo.find();
         for (let ele of data) {
           let newObj = new SCHEMAST();
           newObj['S_ACNOTYPE'] = ele.S_ACNOTYPE
@@ -999,132 +1084,347 @@ export class MigrateService {
           newObj['RECOVERY_RECEPENALINT_FIELD'] = ele.RECOVERY_RECEPENALINT_FIELD
           newObj['REF_ID'] = ele.REF_ID
           console.log('ele.S_APPL', ele.S_APPL)
-          let scheme = await queryRunner.manager.save(SCHEMAST, newObj);
+          // let scheme = await queryRunner.manager.save(SCHEMAST, newObj);
+          let scheme = await schemastRepo.save(newObj);
 
           // let update = await connection2.execute(`update schemast set TYPEID=${scheme.id} where S_APPL = ${ele.S_APPL}`);
-          await connection2.commit();
+          // await connection2.commit();
         }
-        await connection2.close();
-        console.log('SCHEMAST Completed')
+
+        return "success"
+        // await connection2.close();
+        // console.log('SCHEMAST Completed')
       }
-      catch (error) {
-        console.log(error)
-        throw new HttpException({
-          status: HttpStatus.FORBIDDEN,
-          error: 'Issue in schemast' + `${error.stack}`,
-        }, HttpStatus.FORBIDDEN);
-      }
-      await queryRunner.commitTransaction();
-    } catch (error) {
-      // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      // Release the query runner
-      await queryRunner.release();
+    catch(error:any){
+      throw new Error(error);
     }
+
   }
 
-  //ACMASTER
-  // async ACMASTER() {
-  //   //  const config: sql.config = {
-  //   //     user: 'sa',
-  //   //     password: 'subhash',
-  //   //     server: 'localhost',
-  //   //     port: 1433,
-  //   //     database: 'FinEx', // Instead of SID
-  //   //     options: {
-  //   //       encrypt: false,
-  //   //       trustServerCertificate: true,
-  //   //     },
-  //   //   }
+  //SCHEMAST
+  // async SCHEMAST2(config: OracleDynamicConnectionDto,  dto : PgDynamicConnectionDto) {
 
-
-  //   //     const connection = await sql.connect(config);
-
-  //   //         // await connection.close()
-
-  //   //     // ✅ Query data from MSSQL
-  //   //     const acmasterResult = await connection.request().query('SELECT * FROM LEDGER');
-  //   //     const schemastResult = await connection.request().query('SELECT * FROM ACCOUNT_TYPE');
-  //   //     const sysparaResult = await connection.request().query('SELECT * FROM BANK_DETAILS');
-
-  //   //     const customers = acmasterResult.recordset;
-
-
+  //   await this.connectOracleDb(config , dto)
   //   let queryRunner = await this.connection.createQueryRunner();
   //   await queryRunner.connect();
   //   await queryRunner.startTransaction();
   //   try {
   //     try {
-  //       // let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-  //       // let result = await connection2.execute('SELECT acmaster.*,schemast.S_APPL as actype FROM ACMASTER LEFT JOIN SCHEMAST ON ACMASTER.AC_TYPE=SCHEMAST.S_APPL');
-  //       // let data = await this.jsonConverter(result);
-  //       const config: sql.config = {
-  //         user: 'sa',
-  //         password: 'subhash',
-  //         server: 'localhost',
-  //         port: 1433,
-  //         database: 'FinEx', // Instead of SID
-  //         options: {
-  //           encrypt: false,
-  //           trustServerCertificate: true,
-  //         },
-  //       }
-
-
-  //       const connection = await sql.connect(config);
-
-  //       // await connection.close()
-
-  //       // ✅ Query data from MSSQL
-  //       const acmasterResult = await connection.request().query('SELECT * FROM LEDGER');
-  //       const schemastResult = await connection.request().query('SELECT * FROM ACCOUNT_TYPE');
-  //       const sysparaResult = await connection.request().query('SELECT * FROM BANK_DETAILS');
-
-  //       const data = acmasterResult.recordset;
+  //       //oracle connect
+  //       let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+  //       let result = await this.connectionByOracle.execute('select * from SCHEMAST ORDER BY S_APPL');
+  //       let data = await this.jsonConverter(result);
+  //       // pgConnect 
+  //       const schemastRepo = this.dataSourcePg.getRepository(SCHEMAST);
+  //       // const customers = await customerRepo.find();
   //       for (let ele of data) {
-  //         let newObj = new ACMASTER();
-  //         newObj['id'] = ele.AC_NO;
-  //         newObj['AC_NO'] = ele.AC_NO;
-  //         newObj['AC_NAME'] = ele.AC_NAME;
-  //         newObj['BRANCH_CODE'] = this.BRANCH_CODE;
-  //         newObj['AC_OP_BAL'] = ele.AC_OP_BAL
-  //         newObj['IS_POST_INT_AC'] = 0
-  //         newObj['IS_DIRECT_ENTRY_ALLOW'] = ele.IS_DIRECT_ENTRY_ALLOW == 0 ? false : true;
-  //         newObj['IS_RED_BALANCE_AC'] = ele.IS_RED_BALANCE_AC == 0 ? false : true;
-  //         newObj['AC_IS_CASH_IN_TRANSIT'] = ele.AC_IS_CASH_IN_TRANSIT == 0 ? false : true;
-  //         newObj['IS_TAXABLEFOR_GST'] = ele.IS_TAXABLEFOR_GST == 0 ? false : true;
-  //         newObj['AC_ACNOTYPE'] = ele.AC_ACNOTYPE;
-  //         newObj['AC_CLOSEDT'] = ele.AC_CLOSEDT == '' || ele.AC_CLOSEDT == null ? null : moment(ele.AC_CLOSEDT).format('DD/MM/YYYY');
-  //         // newObj['AC_TYPE'] = ele.ACTYPE;
-  //         newObj['AC_TYPE'] = 4;
-  //         newObj['IS_ACTIVE'] = true;
-  //         let master = await this.ACMASTERService.save(newObj);
+  //         let newObj = new SCHEMAST();
+  //         newObj['S_ACNOTYPE'] = ele.S_ACNOTYPE
+  //         newObj['S_APPL'] = ele.S_APPL
+  //         // newObj['S_ACTYPE'] = ele.S_APPL
+  //         newObj['AC_TYPE'] = ele.S_APPL
+  //         newObj['S_NAME'] = ele.S_NAME.replace("\x00", "")
+  //         // newObj['S_SHNAME'] = ele.S_SHNAME
+  //         newObj['S_SHNAME'] = ele.S_SHNAME.replace("\x00", "")
+  //         newObj['S_GLACNO'] = ele.S_GLACNO
+  //         newObj['S_INT_ACNO'] = ele.S_INT_ACNO
+  //         newObj['S_RECBL_PYBL_INT_ACNO'] = ele.S_RECBL_PYBL_INT_ACNO
+  //         newObj['S_PENAL_ACNO'] = ele.S_PENAL_ACNO
+  //         newObj['S_RECBL_PENAL_ACNO'] = ele.S_RECBL_PENAL_ACNO
+  //         newObj['S_RECBL_ODUE_INT_ACNO'] = ele.S_RECBL_ODUE_INT_ACNO
+  //         newObj['S_OUTSTANDING_INT_ACNO'] = ele.S_OUTSTANDING_INT_ACNO
+  //         newObj['IS_DEPO_LOAN'] = ele.IS_DEPO_LOAN == 0 ? '0' : '1'
+  //         newObj['S_INT_APPLICABLE'] = ele.S_INT_APPLICABLE == 0 ? '0' : '1'
+  //         newObj['POST_TO_INDIVIDUAL_AC'] = ele.POST_TO_INDIVIDUAL_AC == 0 ? '0' : '1'
+  //         newObj['S_RECEIVABLE_INT_ALLOW'] = ele.S_RECEIVABLE_INT_ALLOW == 0 ? '0' : '1'
+  //         newObj['IS_INT_ON_RECINT'] = ele.IS_INT_ON_RECINT == 0 ? '0' : '1'
+  //         newObj['IS_INT_ON_OTHERAMT'] = ele.IS_INT_ON_OTHERAMT == 0 ? '0' : '1'
+  //         newObj['IS_INTUPTODATE'] = ele.IS_INTUPTODATE == 0 ? '0' : '1'
+  //         newObj['IS_NO_POST_INT_AFT_OD'] = ele.IS_NO_POST_INT_AFT_OD == 0 ? '0' : '1'
+  //         newObj['INTEREST_METHOD'] = ele.INTEREST_METHOD
+  //         newObj['MIN_INT_LIMIT'] = ele.MIN_INT_LIMIT
+  //         newObj['S_PENAL_INT_APPLICABLE'] = ele.S_PENAL_INT_APPLICABLE == 0 ? '0' : '1'
+  //         newObj['IS_POST_PENAL_TO_AC'] = ele.IS_POST_PENAL_TO_AC == 0 ? '0' : '1'
+  //         newObj['POST_PENALINT_IN_INTEREST'] = ele.POST_PENALINT_IN_INTEREST == 0 ? '0' : '1'
+  //         newObj['IS_REC_PENAL_APPL'] = ele.IS_REC_PENAL_APPL == 0 ? '0' : '1'
+  //         newObj['IS_CAL_PENAL_AFTER_EXPIRY'] = ele.IS_CAL_PENAL_AFTER_EXPIRY == 0 ? '0' : '1'
+  //         newObj['ADD_AMT_IN_PRINCIPLE'] = ele.ADD_AMT_IN_PRINCIPLE == 0 ? 0 : 1
+  //         newObj['ADD_AMT_IN_RECPAY'] = ele.ADD_AMT_IN_RECPAY == 0 ? 0 : 1
+  //         newObj['S_PENAL_INT_RATE'] = ele.S_PENAL_INT_RATE
+  //         newObj['PENAL_METHOD'] = ele.PENAL_METHOD
+  //         newObj['S_DUE_LIST_ALLOW'] = ele.S_DUE_LIST_ALLOW == 0 ? '0' : '1'
+  //         newObj['GRACE_PERIOD_APPLICABLE'] = ele.GRACE_PERIOD_APPLICABLE == 0 ? '0' : '1'
+  //         newObj['MORATORIUM_APPLICABLE'] = ele.MORATORIUM_APPLICABLE == 0 ? '0' : '1'
+  //         newObj['STAND_INSTRUCTION_ALLOW'] = ele.STAND_INSTRUCTION_ALLOW == 0 ? '0' : '1'
+  //         newObj['BALANCE_ADD_APPLICABLE'] = ele.BALANCE_ADD_APPLICABLE == 0 ? '0' : '1'
+  //         newObj['IS_UNSECURED_LOAN'] = ele.IS_UNSECURED_LOAN == 0 ? '0' : '1'
+  //         newObj['IS_OVERDUE_CHARGES_APPLY'] = ele.IS_OVERDUE_CHARGES_APPLY == 0 ? '0' : '1'
+  //         newObj['MAX_LOAN_LMT'] = ele.MAX_LOAN_LMT
+  //         newObj['ROUNDOFF_FACTOR'] = ele.ROUNDOFF_FACTOR
+  //         newObj['DEFAULT_LOAN_PERIOD'] = ele.DEFAULT_LOAN_PERIOD
+  //         newObj['IS_LOAN_PERIOD_LOCK'] = ele.IS_LOAN_PERIOD_LOCK == 0 ? '0' : '1'
+  //         newObj['MIN_LOAN_PERIOD'] = ele.MIN_LOAN_PERIOD
+  //         newObj['MAX_LOAN_PERIOD'] = ele.MAX_LOAN_PERIOD
+  //         newObj['S_INSTTYPE'] = ele.S_INSTTYPE == 0 ? '0' : '1'
+  //         newObj['INSTALLMENT_METHOD'] = ele.INSTALLMENT_METHOD
+  //         newObj['IS_OVERDUE_ON_INSTALLMENT'] = ele.IS_OVERDUE_ON_INSTALLMENT
+  //         newObj['IS_SHOW_INT_AS_RECINT_IFDUEBAL'] = ele.IS_SHOW_INT_AS_RECINT_IFDUEBAL == 0 ? '0' : '1'
+  //         newObj['MIN_DUE_INSTALLMENTS'] = ele.MIN_DUE_INSTALLMENTS
+  //         newObj['S_PRODUCT_DAY_BASE'] = ele.S_PRODUCT_DAY_BASE
+  //         newObj['S_PRODUCT_DAY_BASE_END'] = ele.S_PRODUCT_DAY_BASE_END
+  //         newObj['CHEQUEBOOK_MIN_BAL'] = ele.CHEQUEBOOK_MIN_BAL
+  //         newObj['DORMANT_FLAG_APPLICABLE'] = ele.DORMANT_FLAG_APPLICABLE == 0 ? '0' : '1'
+  //         newObj['OVERDRAFT_INTEREST_APPLICABLE'] = ele.OVERDRAFT_INTEREST_APPLICABLE
+  //         newObj['OVERDRAFT_INTEREST_RATE'] = ele.OVERDRAFT_INTEREST_RATE
+  //         newObj['GL_ACNO'] = ele.GL_ACNO
+  //         newObj['S_PAYABLE_INT_ALLOW'] = ele.S_PAYABLE_INT_ALLOW == 0 ? '0' : '1'
+  //         newObj['IS_AUTO_CUT_INSTRUCTION'] = ele.IS_AUTO_CUT_INSTRUCTION == 0 ? '0' : '1'
+  //         newObj['IS_ALLOW_SI_MINBAL'] = ele.IS_ALLOW_SI_MINBAL == 0 ? '0' : '1'
+  //         newObj['WITHDRAWAL_APPLICABLE'] = ele.WITHDRAWAL_APPLICABLE == 0 ? '0' : '1'
+  //         newObj['S_INTPAID_ON_CLOSING'] = ele.S_INTPAID_ON_CLOSING == 0 ? '0' : '1'
+  //         newObj['PREMATURE_COMPOUND_INT'] = ele.PREMATURE_COMPOUND_INT == 0 ? '0' : '1'
+  //         newObj['PIGMY_MACHINE_SCHEME'] = ele.PIGMY_MACHINE_SCHEME
+  //         newObj['SVR_CHARGE_GLCODE'] = ele.SVR_CHARGE_GLCODE
+  //         newObj['SVR_CHARGE_RATE'] = ele.SVR_CHARGE_RATE
+  //         newObj['S_CASH_INT_ACNO'] = ele.S_CASH_INT_ACNO
+  //         newObj['INTEREST_RULE'] = ele.INTEREST_RULE == 0 ? '0' : '1'
+  //         newObj['IS_RECURRING_TYPE'] = ele.IS_RECURRING_TYPE == 0 ? '0' : '1'
+  //         newObj['IS_CALLDEPOSIT_TYPE'] = ele.IS_CALLDEPOSIT_TYPE == 0 ? '0' : '1'
+  //         newObj['REINVESTMENT'] = ele.REINVESTMENT == 0 ? '0' : '1'
+  //         newObj['S_INTCALC_METHOD'] = ele.S_INTCALC_METHOD
+  //         newObj['FIX_QUARTER'] = ele.FIX_QUARTER == 0 ? '0' : '1'
+  //         newObj['QUARTER_PLUS_DAYS'] = ele.QUARTER_PLUS_DAYS == 0 ? '0' : '1'
+  //         newObj['COMPOUND_INT_BASIS'] = ele.COMPOUND_INT_BASIS
+  //         newObj['COMPOUND_INT_DAYS'] = ele.COMPOUND_INT_DAYS
+  //         newObj['IS_DISCOUNTED_INT_RATE'] = ele.IS_DISCOUNTED_INT_RATE == 0 ? '0' : '1'
+  //         newObj['INSTALLMENT_BASIS'] = ele.INSTALLMENT_BASIS
+  //         newObj['IS_ASSUMED_INSTALLMENTS'] = ele.IS_ASSUMED_INSTALLMENTS == 0 ? '0' : '1'
+  //         newObj['INSTALLMENT_COMPULSORY_IN_PAT'] = ele.INSTALLMENT_COMPULSORY_IN_PAT == 0 ? '0' : '1'
+  //         newObj['DEPOSIT_PENAL_INT_CALC_DAY'] = ele.DEPOSIT_PENAL_INT_CALC_DAY
+  //         newObj['S_MATUCALC'] = ele.S_MATUCALC
+  //         newObj['IS_CAL_MATURITY_AMT'] = ele.IS_CAL_MATURITY_AMT == 0 ? '0' : '1'
+  //         newObj['FIXED_MATURITY_AMT'] = ele.FIXED_MATURITY_AMT == 0 ? '0' : '1'
+  //         newObj['TRANSFER_TO_MATURE_DEPOSIT'] = ele.TRANSFER_TO_MATURE_DEPOSIT == 0 ? '0' : '1'
+  //         newObj['S_INTASON'] = ele.S_INTASON == 0 ? '0' : '1'
+  //         newObj['PERIOD_APPLICABLE'] = ele.PERIOD_APPLICABLE == 0 ? '0' : '1'
+  //         newObj['IS_AUTO_PERIOD_CALCULATE'] = ele.IS_AUTO_PERIOD_CALCULATE == 0 ? '0' : '1'
+  //         newObj['UNIT_OF_PERIOD'] = ele.UNIT_OF_PERIOD
+  //         newObj['MIN_DAYS'] = ele.MIN_DAYS
+  //         newObj['MIN_MONTH'] = ele.MIN_MONTH
+  //         newObj['MULTIPLE_OF_AMT'] = ele.MULTIPLE_OF_AMT
+  //         newObj['MULTIPLE_OF_DAYS'] = ele.MULTIPLE_OF_DAYS
+  //         newObj['MULTIPLE_OF_MONTH'] = ele.MULTIPLE_OF_MONTH
+  //         newObj['S_INTPAID'] = ele.S_INTPAID == 0 ? '0' : '1'
+  //         newObj['INT_INSTRUCTION_ALLOW'] = ele.INT_INSTRUCTION_ALLOW == 0 ? '0' : '1'
+  //         newObj['RECEIPT_NO_INPUT'] = ele.RECEIPT_NO_INPUT == 0 ? '0' : '1'
+  //         newObj['LESS_PREMATURE_INT_RATE'] = ele.LESS_PREMATURE_INT_RATE
+  //         newObj['LOCKER_RENT_ACNO'] = ele.LOCKER_RENT_ACNO
+  //         newObj['LOCKER_RECBL_RENT_ACNO'] = ele.LOCKER_RECBL_RENT_ACNO
+  //         newObj['LOCKER_DEPOSIT_APPLICABLE'] = ele.LOCKER_DEPOSIT_APPLICABLE == 0 ? '0' : '1'
+  //         newObj['IS_DAYBASE_INT_CALCULATION'] = ele.IS_DAYBASE_INT_CALCULATION == 0 ? '0' : '1'
+  //         newObj['IS_INSTRUCTION_UPTO_MATURITY'] = ele.IS_INSTRUCTION_UPTO_MATURITY == 0 ? '0' : '1'
+  //         newObj['MEMBER_TYPE'] = ele.MEMBER_TYPE
+  //         newObj['IS_AUTO_NO'] = ele.IS_AUTO_NO == 0 ? '0' : '1'
+  //         newObj['SHARES_FACE_VALUE'] = ele.SHARES_FACE_VALUE
+  //         newObj['MAX_SHARES_LIMIT'] = ele.MAX_SHARES_LIMIT
+  //         newObj['DIVIDEND_PERCENTAGE'] = ele.DIVIDEND_PERCENTAGE
+  //         newObj['IS_ADD_BONUS_IN_DIVIDEND'] = ele.IS_ADD_BONUS_IN_DIVIDEND == 0 ? '0' : '1'
+  //         newObj['INT_ROUND_OFF'] = ele.INT_ROUND_OFF == 0 ? '0' : '1'
+  //         newObj['SANCT_LIMIT_PERCENTAGE'] = ele.SANCT_LIMIT_PERCENTAGE
+  //         newObj['RETIREMENT_YEARS'] = ele.RETIREMENT_YEARS
+  //         newObj['SH_CERTIFICATE_METHOD'] = ele.SH_CERTIFICATE_METHOD
+  //         newObj['MATURED_BUT_NOT_PAID_GLAC'] = ele.MATURED_BUT_NOT_PAID_GLAC
+  //         newObj['IS_RENEWAL_ALLOW'] = ele.IS_RENEWAL_ALLOW == 0 ? '0' : '1'
+  //         newObj['IS_INT_ON_DEPO_AMT'] = ele.IS_INT_ON_DEPO_AMT == 0 ? '0' : '1'
+  //         newObj['S_INTCALTP'] = ele.S_INTCALTP
+  //         newObj['IS_PRODUCTUPTODATE'] = ele.IS_PRODUCTUPTODATE == 0 ? '0' : '1'
+  //         newObj['IS_START_WITH_MONTHS'] = ele.IS_START_WITH_MONTHS == 0 ? '0' : '1'
+  //         newObj['IS_PRODUCT_BAL_BASE'] = ele.IS_PRODUCT_BAL_BASE
+  //         newObj['IS_DAYSBASE_INSTRUCTION'] = ele.IS_DAYSBASE_INSTRUCTION == 0 ? '0' : '1'
+  //         newObj['PREMATURE_ON_DEPOSIT_INST'] = ele.PREMATURE_ON_DEPOSIT_INST == 0 ? '0' : '1'
+  //         newObj['ALLOW_EXTRA_INSTALLMENTS'] = ele.ALLOW_EXTRA_INSTALLMENTS == 0 ? '0' : '1'
+  //         newObj['MATURE_GRACE_MONTHS'] = ele.MATURE_GRACE_MONTHS
+  //         newObj['MATURE_GRACE_DAYS'] = ele.MATURE_GRACE_DAYS
+  //         newObj['IS_AUTO_CUTTING'] = ele.IS_AUTO_CUTTING == 0 ? '0' : '1'
+  //         newObj['MAX_DEP_LMT'] = ele.MAX_DEP_LMT
+  //         newObj['IS_TDS_APPLICABLE'] = ele.IS_TDS_APPLICABLE == 0 ? '0' : '1'
+  //         newObj['S_INTADD_PRINCIPLE'] = ele.S_INTADD_PRINCIPLE == 0 ? '0' : '1'
+  //         newObj['IS_STD_INSTR_UPTO_MATURITY'] = ele.IS_STD_INSTR_UPTO_MATURITY == 0 ? '0' : '1'
+  //         newObj['IS_ADD_PAYINT_IN_INSTRUCTION'] = ele.IS_ADD_PAYINT_IN_INSTRUCTION == 0 ? '0' : '1'
+  //         newObj['RECEIPT_TYPE'] = ele.RECEIPT_TYPE
+  //         newObj['PREMATURE_INTRATE_ASPER'] = ele.PREMATURE_INTRATE_ASPER
+  //         newObj['AFTER_MATURE_INT_RATE'] = ele.AFTER_MATURE_INT_RATE
+  //         newObj['TD_RECEIPT_METHOD'] = ele.TD_RECEIPT_METHOD
+  //         newObj['MIN_BAL_FOR_INT'] = ele.MIN_BAL_FOR_INT
+  //         newObj['ODPENALTY_ON_EXPIRED_LEDGERBAL'] = ele.ODPENALTY_ON_EXPIRED_LEDGERBAL == 0 ? '0' : '1'
+  //         newObj['IS_CAL_EXTRAPENAL_FOR_CC'] = ele.IS_CAL_EXTRAPENAL_FOR_CC == 0 ? '0' : '1'
+  //         newObj['IS_GOLD_LOAN'] = ele.IS_GOLDLOAN == 0 ? '0' : '1'
+  //         newObj['S_SINGLE_VOUCHER'] = ele.S_SINGLE_VOUCHER == 0 ? '0' : '1'
+  //         newObj['S_MULTY_VOUCHER'] = ele.S_MULTY_VOUCHER == 0 ? '0' : '1'
+  //         newObj['S_CASH_PAID_MIN_AMT'] = ele.S_CASH_PAID_MIN_AMT
+  //         newObj['S_CASH_PAID_LOCK'] = ele.S_CASH_PAID_LOCK == 0 ? '0' : '1'
+  //         newObj['S_LOCAL_CLEARING'] = ele.S_LOCAL_CLEARING == 0 ? '0' : '1'
+  //         newObj['S_CHEQUE_BOOK'] = ele.S_CHEQUE_BOOK == 0 ? '0' : '1'
+  //         newObj['S_DEMAND_DRAFT'] = ele.S_DEMAND_DRAFT == 0 ? '0' : '1'
+  //         newObj['IS_PO_APPL'] = ele.IS_PO_APPL == 0 ? '0' : '1'
+  //         newObj['S_TEMP_OVERDRFT'] = ele.S_TEMP_OVERDRFT == 0 ? '0' : '1'
+  //         newObj['S_PERIODCL_OVERDRFT'] = ele.S_PERIODCL_OVERDRFT == 0 ? '0' : '1'
+  //         newObj['S_SPECIAL_INSTRUCTION'] = ele.S_SPECIAL_INSTRUCTION == 0 ? '0' : '1'
+  //         newObj['S_SUB_PRINT'] = ele.S_SUB_PRINT == 0 ? '0' : '1'
+  //         newObj['S_FREEZE_APPLICABLE'] = ele.S_FREEZE_APPLICABLE == 0 ? '0' : '1'
+  //         newObj['PROD_INTUPTODATE'] = ele.PROD_INTUPTODATE == 0 ? '0' : '1'
+  //         newObj['S_INT_CR_ACNO'] = ele.S_INT_CR_ACNO
+  //         newObj['IS_ZERO_BAL_REQUIRED'] = ele.IS_ZERO_BAL_REQUIRED == 0 ? '0' : '1'
+  //         newObj['INT_BASE_DAY'] = ele.INT_BASE_DAY
+  //         newObj['INT_BASE_METHOD'] = ele.INT_BASE_METHOD
+  //         newObj['SHOW_OVERDUEINT_IF_RECINTBAL'] = ele.SHOW_OVERDUEINT_IF_RECINTBAL
+  //         newObj['IS_RECOVERY_APPLICABLE'] = ele.IS_RECOVERY_APPLICABLE == 0 ? '0' : '1'
+  //         newObj['IS_ASK_RECOVERY'] = ele.IS_ASK_RECOVERY == 0 ? '0' : '1'
+  //         newObj['RECOVERY_ACTYPE_FILED'] = ele.RECOVERY_ACTYPE_FILED
+  //         newObj['RECOVERY_ACNO_FIELD'] = ele.RECOVERY_ACNO_FIELD
+  //         newObj['REVOVERY_INST_FIELD'] = ele.REVOVERY_INST_FIELD
+  //         newObj['RECOVERY_INT_INST_FILED'] = ele.RECOVERY_INT_INST_FILED
+  //         newObj['RECOVERY_BALNACE_FILED'] = ele.RECOVERY_BALNACE_FILED
+  //         newObj['RECOVERY_RECEIVABLEINT_FILED'] = ele.RECOVERY_RECEIVABLEINT_FILED
+  //         newObj['RECOVERY_TOTINST_FILED'] = ele.RECOVERY_TOTINST_FILED
+  //         newObj['RECOVERY_PENALINT_FILED'] = ele.RECOVERY_PENALINT_FILED
+  //         newObj['RECOVERY_RECEPENALINT_FIELD'] = ele.RECOVERY_RECEPENALINT_FIELD
+  //         newObj['REF_ID'] = ele.REF_ID
+  //         console.log('ele.S_APPL', ele.S_APPL)
+  //         // let scheme = await queryRunner.manager.save(SCHEMAST, newObj);
+  //         let scheme = await schemastRepo.save(newObj);
 
+  //         // let update = await connection2.execute(`update schemast set TYPEID=${scheme.id} where S_APPL = ${ele.S_APPL}`);
+  //         // await connection2.commit();
   //       }
-  //       await connection.close()
-  //       console.log('ACMASTER Completed')
+  //       // await connection2.close();
+  //       // console.log('SCHEMAST Completed')
   //     }
   //     catch (error) {
-  //       throw new HttpException({
-  //         status: HttpStatus.FORBIDDEN,
-  //         error: error,
-  //       }, HttpStatus.FORBIDDEN);
-  //     }
-  //     await queryRunner.commitTransaction();
-  //   } catch (error) {
-  //     // Rollback the transaction if an error occurs
-  //     await queryRunner.rollbackTransaction();
-  //     throw error;
-  //   } finally {
+  //       console.log(error)
+  //     //   throw new HttpException({
+  //     //     status: HttpStatus.FORBIDDEN,
+  //     //     error: 'Issue in schemast' + `${error.stack}`,
+  //     //   }, HttpStatus.FORBIDDEN);
+  //     // }
+  //     // await queryRunner.commitTransaction();
+  //   } 
+  //   // catch (error) {
+  //   //   // Rollback the transaction if an error occurs
+  //   //   // await queryRunner.rollbackTransaction();
+  //   //   throw error;
+  //   // } 
+  //   finally {
   //     // Release the query runner
-  //     await queryRunner.release();
+  //     // await queryRunner.release();
   //   }
-  //   // await connection.close()
   // }
 
 
+  // //ACMASTER
+  // // async ACMASTER() {
+  // //   //  const config: sql.config = {
+  // //   //     user: 'sa',
+  // //   //     password: 'subhash',
+  // //   //     server: 'localhost',
+  // //   //     port: 1433,
+  // //   //     database: 'FinEx', // Instead of SID
+  // //   //     options: {
+  // //   //       encrypt: false,
+  // //   //       trustServerCertificate: true,
+  // //   //     },
+  // //   //   }
+
+
+  // //   //     const connection = await sql.connect(config);
+
+  // //   //         // await connection.close()
+
+  // //   //     // ✅ Query data from MSSQL
+  // //   //     const acmasterResult = await connection.request().query('SELECT * FROM LEDGER');
+  // //   //     const schemastResult = await connection.request().query('SELECT * FROM ACCOUNT_TYPE');
+  // //   //     const sysparaResult = await connection.request().query('SELECT * FROM BANK_DETAILS');
+
+  // //   //     const customers = acmasterResult.recordset;
+
+
+  // //   let queryRunner = await this.connection.createQueryRunner();
+  // //   await queryRunner.connect();
+  // //   await queryRunner.startTransaction();
+  // //   try {
+  // //     try {
+  // //       // let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+  // //       // let result = await connection2.execute('SELECT acmaster.*,schemast.S_APPL as actype FROM ACMASTER LEFT JOIN SCHEMAST ON ACMASTER.AC_TYPE=SCHEMAST.S_APPL');
+  // //       // let data = await this.jsonConverter(result);
+  // //       const config: sql.config = {
+  // //         user: 'sa',
+  // //         password: 'subhash',
+  // //         server: 'localhost',
+  // //         port: 1433,
+  // //         database: 'FinEx', // Instead of SID
+  // //         options: {
+  // //           encrypt: false,
+  // //           trustServerCertificate: true,
+  // //         },
+  // //       }
+
+
+  // //       const connection = await sql.connect(config);
+
+  // //       // await connection.close()
+
+  // //       // ✅ Query data from MSSQL
+  // //       const acmasterResult = await connection.request().query('SELECT * FROM LEDGER');
+  // //       const schemastResult = await connection.request().query('SELECT * FROM ACCOUNT_TYPE');
+  // //       const sysparaResult = await connection.request().query('SELECT * FROM BANK_DETAILS');
+
+  // //       const data = acmasterResult.recordset;
+  // //       for (let ele of data) {
+  // //         let newObj = new ACMASTER();
+  // //         newObj['id'] = ele.AC_NO;
+  // //         newObj['AC_NO'] = ele.AC_NO;
+  // //         newObj['AC_NAME'] = ele.AC_NAME;
+  // //         newObj['BRANCH_CODE'] = this.BRANCH_CODE;
+  // //         newObj['AC_OP_BAL'] = ele.AC_OP_BAL
+  // //         newObj['IS_POST_INT_AC'] = 0
+  // //         newObj['IS_DIRECT_ENTRY_ALLOW'] = ele.IS_DIRECT_ENTRY_ALLOW == 0 ? false : true;
+  // //         newObj['IS_RED_BALANCE_AC'] = ele.IS_RED_BALANCE_AC == 0 ? false : true;
+  // //         newObj['AC_IS_CASH_IN_TRANSIT'] = ele.AC_IS_CASH_IN_TRANSIT == 0 ? false : true;
+  // //         newObj['IS_TAXABLEFOR_GST'] = ele.IS_TAXABLEFOR_GST == 0 ? false : true;
+  // //         newObj['AC_ACNOTYPE'] = ele.AC_ACNOTYPE;
+  // //         newObj['AC_CLOSEDT'] = ele.AC_CLOSEDT == '' || ele.AC_CLOSEDT == null ? null : moment(ele.AC_CLOSEDT).format('DD/MM/YYYY');
+  // //         // newObj['AC_TYPE'] = ele.ACTYPE;
+  // //         newObj['AC_TYPE'] = 4;
+  // //         newObj['IS_ACTIVE'] = true;
+  // //         let master = await this.ACMASTERService.save(newObj);
+
+  // //       }
+  // //       await connection.close()
+  // //       console.log('ACMASTER Completed')
+  // //     }
+  // //     catch (error) {
+  // //       throw new HttpException({
+  // //         status: HttpStatus.FORBIDDEN,
+  // //         error: error,
+  // //       }, HttpStatus.FORBIDDEN);
+  // //     }
+  // //     await queryRunner.commitTransaction();
+  // //   } catch (error) {
+  // //     // Rollback the transaction if an error occurs
+  // //     await queryRunner.rollbackTransaction();
+  // //     throw error;
+  //   //  finally {
+  //   //   // Release the query runner
+  //   //   await queryRunner.release();
+    
+  // }
+
+
+
+  
+  
+  
+  
   dvbwToUnicode: Record<string, string> = {
     "¢": "अ",
     "£": "आ",
@@ -2041,33 +2341,38 @@ export class MigrateService {
 
   //CASTMASTER
   async CASTMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM CASTMASTER ');
+      // let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM CASTMASTER ');
+      const castmasterRepo = this.dataSourcePg.getRepository(CASTMASTER);
+
       let data = await this.jsonConverter(result);
-      let pgData = await this.CASTMASTERService.find()
+      let pgData = await castmasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
         }
         else {
           let obj = new CASTMASTER()
           obj['NAME'] = ele.NAME.replace("\x00", "")
-          let insertObj = await queryRunner.manager.insert(CASTMASTER, obj)
+          let insertObj = await castmasterRepo.save(obj)
+          // let insertObj = await queryRunner.manager.insert(CASTMASTER, obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+
+      return "success"
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('CASTMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      // await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      // await queryRunner.release();
     }
   }
 
@@ -12719,11 +13024,11 @@ export class MigrateService {
 
 
 
-// Backend: Method to check if a single table's row count matches
-// Update this method inside migrate.service.ts
+  // Backend: Method to check if a single table's row count matches
+  // Update this method inside migrate.service.ts
   async checkSingleTableSync(tableName: string): Promise<{ isSynced: boolean, oracleCount: number, pgCount: number }> {
     let connection = await oracledb.getConnection({
-      user: this.user,
+      user: this,
       password: this.password,
       connectString: this.connectionString
     });
@@ -12731,16 +13036,16 @@ export class MigrateService {
     try {
       const oracleResult = await connection.execute(`SELECT COUNT(*) as cnt FROM ${tableName}`);
       const oracleCount = Number(oracleResult.rows[0][0]);
-      
+
       // Assuming this.connection is your Postgres connection
       const pgCount = await this.connection.getRepository(tableName).count();
 
       // Return the numbers along with the true/false status!
-      return { 
+      return {
         isSynced: oracleCount === pgCount,
         oracleCount: oracleCount,
         pgCount: pgCount
-      }; 
+      };
     } catch (error) {
       console.error(`Error checking sync for ${tableName}:`, error);
       throw error;

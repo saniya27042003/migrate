@@ -1,0 +1,88 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+exports.__esModule = true;
+exports.LOCKERRENTTRAN = void 0;
+var typeorm_1 = require("typeorm");
+var LOCKERRENTTRAN = /** @class */ (function () {
+    function LOCKERRENTTRAN() {
+    }
+    __decorate([
+        (0, typeorm_1.PrimaryGeneratedColumn)()
+    ], LOCKERRENTTRAN.prototype, "id");
+    __decorate([
+        (0, typeorm_1.Column)({ nullable: true })
+    ], LOCKERRENTTRAN.prototype, "TRAN_NO");
+    __decorate([
+        (0, typeorm_1.Column)()
+    ], LOCKERRENTTRAN.prototype, "TRAN_DATE");
+    __decorate([
+        (0, typeorm_1.Column)()
+    ], LOCKERRENTTRAN.prototype, "TRAN_TIME");
+    __decorate([
+        (0, typeorm_1.Column)({ nullable: true })
+    ], LOCKERRENTTRAN.prototype, "TRAN_ACNOTYPE");
+    __decorate([
+        (0, typeorm_1.Column)({ nullable: true })
+    ], LOCKERRENTTRAN.prototype, "TRAN_ACTYPE");
+    __decorate([
+        (0, typeorm_1.Column)({ length: 15 })
+    ], LOCKERRENTTRAN.prototype, "TRAN_ACNO");
+    __decorate([
+        (0, typeorm_1.Column)()
+    ], LOCKERRENTTRAN.prototype, "TRAN_TYPE");
+    __decorate([
+        (0, typeorm_1.Column)({ nullable: true })
+    ], LOCKERRENTTRAN.prototype, "TRAN_DRCR");
+    __decorate([
+        (0, typeorm_1.Column)()
+    ], LOCKERRENTTRAN.prototype, "TRAN_MODE");
+    __decorate([
+        (0, typeorm_1.Column)({ type: 'numeric', precision: 20, scale: 2, "default": 0 })
+    ], LOCKERRENTTRAN.prototype, "TRAN_AMOUNT");
+    __decorate([
+        (0, typeorm_1.Column)({ nullable: true })
+    ], LOCKERRENTTRAN.prototype, "RENT_FROM_DATE");
+    __decorate([
+        (0, typeorm_1.Column)({ nullable: true })
+    ], LOCKERRENTTRAN.prototype, "RENT_UPTO_DATE");
+    __decorate([
+        (0, typeorm_1.Column)({ nullable: true })
+    ], LOCKERRENTTRAN.prototype, "RECEIPT_NO");
+    __decorate([
+        (0, typeorm_1.Column)({ nullable: true })
+    ], LOCKERRENTTRAN.prototype, "TRF_ACNOTYPE");
+    __decorate([
+        (0, typeorm_1.Column)({ nullable: true })
+    ], LOCKERRENTTRAN.prototype, "TRF_ACTYPE");
+    __decorate([
+        (0, typeorm_1.Column)({ length: 15 })
+    ], LOCKERRENTTRAN.prototype, "TRF_ACNO");
+    __decorate([
+        (0, typeorm_1.Column)({ nullable: true })
+    ], LOCKERRENTTRAN.prototype, "TRAN_STATUS");
+    __decorate([
+        (0, typeorm_1.Column)({ nullable: true })
+    ], LOCKERRENTTRAN.prototype, "AC_CLOSED");
+    __decorate([
+        (0, typeorm_1.Column)({ nullable: true })
+    ], LOCKERRENTTRAN.prototype, "BRANCH_CODE");
+    __decorate([
+        (0, typeorm_1.Column)()
+    ], LOCKERRENTTRAN.prototype, "USER_CODE");
+    __decorate([
+        (0, typeorm_1.Column)({ nullable: true })
+    ], LOCKERRENTTRAN.prototype, "OFFICER_CODE");
+    __decorate([
+        (0, typeorm_1.Column)({ nullable: true })
+    ], LOCKERRENTTRAN.prototype, "TRAN_ENTRY_TYPE");
+    LOCKERRENTTRAN = __decorate([
+        (0, typeorm_1.Entity)()
+    ], LOCKERRENTTRAN);
+    return LOCKERRENTTRAN;
+}());
+exports.LOCKERRENTTRAN = LOCKERRENTTRAN;

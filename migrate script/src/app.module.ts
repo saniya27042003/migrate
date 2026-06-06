@@ -8,6 +8,7 @@ import { UserDefinationModule } from './utility/user-defination/user-defination.
 import { MigrateModule } from './migrate/migrate.module';
 import { AuthModule } from './auth/auth.module';
 import { ConnectionModule } from './connection/connection.module';
+import { OrmSet } from './OrmSet';
 @Module({
   imports: [TypeOrmModule.forRoot(config), TypeOrmModule.forFeature([]),
     UserDefinationModule,

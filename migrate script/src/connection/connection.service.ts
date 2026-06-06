@@ -2,6 +2,7 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { createConnection, ConnectionOptions, getConnectionManager, getConnection } from 'typeorm';
 import { DynamicConnectionDto } from './dto/connection.dto';
+import  * as oracledb from 'oracledb';
 
 @Injectable()
 export class DatabaseManagerService {
@@ -35,54 +36,94 @@ export class DatabaseManagerService {
     };
 
     try {
-      // Establish and KEEP the connection open
-      await createConnection(options);
 
-      return { 
-        success: true, 
-        message: `Successfully connected to ${payload.type.toUpperCase()} database and connection is active!` 
-      };
+  console.log('PAYLOAD');
+  console.log(payload);
 
-    } catch (error) {
-      throw new HttpException(
-        { success: false, message: `Failed to connect: ${error.message}` }, 
-        HttpStatus.BAD_REQUEST
-      );
-    }
+  console.log('OPTIONS');
+  console.log(options);
+
+  if (payload.type === 'oracle') {
+
+    const conn = await oracledb.getConnection({
+      user: payload.username,
+      password: payload.password,
+      connectString:
+        `${payload.host}:${payload.port}/${payload.database}`
+    });
+
+    await conn.close();
+
+    return {
+      success: true,
+      message: 'Oracle connected successfully'
+    };
   }
 
-  async fetchAllTables(dbType: string): Promise<string[]> {
-    try {
-      // Retrieve the active connection established previously
-      const connection = getConnection(dbType);
+  await createConnection(options);
 
-      if (dbType === 'postgres') {
-        // Query to fetch all tables in the public schema for PostgreSQL
-        const result = await connection.query(`
-          SELECT tablename 
-          FROM pg_tables 
-          WHERE schemaname = 'public'
-        `);
-        // Map to uppercase so it matches your Oracle standard formatting
-        return result.map(row => row.tablename.toUpperCase());
-      } 
-      
-      if (dbType === 'oracle') {
-        // Query to fetch all tables for the connected user in Oracle
-        const result = await connection.query(`
-          SELECT table_name 
-          FROM user_tables
-        `);
-        return result.map(row => row.TABLE_NAME.toUpperCase());
-      }
+  return {
+    success: true,
+    message: 'Postgres connected successfully'
+  };
 
-      throw new Error('Unsupported database type');
+} catch (error) {
 
-    } catch (error) {
-      throw new HttpException(
-        { success: false, message: `Failed to fetch tables: ${error.message}` },
-        HttpStatus.INTERNAL_SERVER_ERROR
+  console.error('========== FULL ERROR ==========');
+  console.error(error);
+  console.error('===============================');
+
+  throw new HttpException(
+    {
+      success: false,
+      message: `Failed to connect: ${error.message}`
+    },
+    HttpStatus.BAD_REQUEST
+  );
+}
+}
+async fetchAllTables(dbType: string): Promise<string[]> {
+
+  try {
+
+    const connection = getConnection(dbType);
+
+    if (dbType === 'postgres') {
+
+      const result = await connection.query(`
+        SELECT tablename
+        FROM pg_tables
+        WHERE schemaname = 'public'
+      `);
+
+      return result.map(row =>
+        row.tablename.toUpperCase()
       );
     }
+
+    if (dbType === 'oracle') {
+
+      const result = await connection.query(`
+        SELECT table_name
+        FROM user_tables
+      `);
+
+      return result.map(row =>
+        row.TABLE_NAME.toUpperCase()
+      );
+    }
+
+    throw new Error('Unsupported database type');
+
+  } catch (error) {
+
+    throw new HttpException(
+      {
+        success: false,
+        message: `Failed to fetch tables: ${error.message}`
+      },
+      HttpStatus.INTERNAL_SERVER_ERROR
+    );
   }
+}
 }

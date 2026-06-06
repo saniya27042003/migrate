@@ -6,18 +6,22 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class MigrationService {
-  // Your existing migration endpoint
   private baseUrl = 'http://localhost:7272/migrate';
 
-  // The endpoint for your database connection controller
-  private dbUrl = 'http://localhost:7272/database';
+  private dbUrl = 'http://localhost:7272/migrate/connectOracleDB';
 
   constructor(private http: HttpClient) { }
 
-  // 🌟 NEW: Method to connect to either Postgres or Oracle
   connectToDatabase(config: any): Observable<any> {
     return this.http.post(`${this.dbUrl}/connect`, config);
   }
+
+  initializeMigration(config: any): Observable<any> {
+  return this.http.post(
+    `${this.baseUrl}/script`,
+    config
+  );
+}
 
   // Method to fetch the Oracle tables dynamically
   fetchSourceTables(): Observable<{success: boolean, count: number, data: string[]}> {

@@ -1,0 +1,118 @@
+<div class="db-container">
+  <div class="db-layout">
+
+    <!-- LEFT SECTION: SOURCE DATABASE -->
+    <div class="db-section source-section">
+
+      <h2 class="db-title">SOURCE DATABASE</h2>
+
+      <div class="db-card" 
+        (click)="selectPrimary('PostgreSQL')" 
+        [ngClass]="primaryClassMap['PostgreSQL']">
+        <figure class="db-icon">
+          <img src="assets/images/postgres.png" alt="PostgreSQL" />
+        </figure>
+      </div>
+
+      <span class="db-name">PostgreSQL</span>
+
+      <form [formGroup]="primaryForm" class="db-form">
+        <div class="form-grid-2col">
+          <input class="db-input" placeholder="Host" formControlName="host">
+          <input class="db-input" placeholder="Port" formControlName="port">
+          <input class="db-input" placeholder="Username" formControlName="username">
+          <input class="db-input" placeholder="Password" type="password" formControlName="password">
+        </div>
+
+        <div class="db-select-wrapper">
+          <select class="db-select" 
+            [(ngModel)]="selectedDatabase" 
+            [ngModelOptions]="{ standalone: true }"
+            (click)="onOpenDatabaseDropdown()">
+            <option value="" disabled selected *ngIf="!selectedDatabase">
+              {{ loadingDatabases ? 'Loading databases...' : 'Select Database' }}
+            </option>
+            <option *ngFor="let db of databaseList" [value]="db">
+              {{ db }}
+            </option>
+          </select>
+          <svg class="db-select-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </form>
+
+    </div>
+
+    <!-- ARROW DIVIDER -->
+    <div class="db-arrow">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+      </svg>
+    </div>
+
+    <!-- RIGHT SECTION: TARGET CONFIGURATION -->
+    <div class="db-target-wrapper">
+      <div class="db-section target-section">
+        <h2 class="db-title">TARGET CONFIGURATION</h2>
+        
+        <div class="db-grid-3col">
+          <div *ngFor="let db of databases" class="db-type-item">
+            <div class="db-type-card" 
+              [ngClass]="clientClassMap[db.name]" 
+              (click)="selectClient(db.name)">
+              <figure class="db-type-icon">
+                <img [src]="db.img" alt="{{ db.name }}" />
+              </figure>
+            </div>
+            <span class="db-type-name" [ngClass]="clientForm.get('type')?.value === db.name ? 'selected' : ''">
+              {{ db.name }}
+            </span>
+          </div>
+        </div>
+
+        <form [formGroup]="clientForm" class="db-form db-form-grid">
+          <input class="db-input" formControlName="type" placeholder="Type" readonly>
+          <input class="db-input" formControlName="database" placeholder="Database Name">
+          <input class="db-input" formControlName="host" placeholder="Host">
+          <input class="db-input" formControlName="port" placeholder="Port">
+          <input class="db-input" formControlName="username" placeholder="Username">
+          <input class="db-input" formControlName="password" placeholder="Password" type="password">
+        </form>
+      </div>
+
+      <div class="db-buttons">
+        <button class="btn-connect" (click)="onOkClick()">Connect</button>
+        <button class="btn-cancel" (click)="onCancelClick()">Cancel</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL: CONNECTION STATUS -->
+<div class="db-modal" *ngIf="isConnecting || messageBox.visible">
+  <div class="db-modal-backdrop"></div>
+  <div class="db-modal-content">
+
+    <ng-container *ngIf="isConnecting">
+      <div class="spinner"></div>
+      <h3 class="modal-title">Connecting Databases</h3>
+      <p class="modal-text">Establishing connection to Server and Client...<br />Please wait.</p>
+    </ng-container>
+
+    <ng-container *ngIf="!isConnecting && messageBox.visible">
+      <span class="modal-icon" [ngClass]="messageBox.type === 'success' ? 'success' : 'error'">
+        {{ messageBox.type === 'success' ? '✓' : '✕' }}
+      </span>
+      <h3 class="modal-title" [ngClass]="messageBox.type === 'success' ? 'success' : 'error'">
+        {{ messageBox.type === 'success' ? 'Connection Successful' : 'Connection Failed' }}
+      </h3>
+      <p class="modal-text">{{ messageBox.text }}</p>
+      <button class="btn-modal-ok" [ngClass]="messageBox.type === 'success' ? 'success' : 'error'" (click)="closeMessageBox()">
+        OK
+      </button>
+    </ng-container>
+
+  </div>
+</div>

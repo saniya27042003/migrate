@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { MigrationService } from '../services/migration.service'; // Make sure this path points to your service
+import { MigrationService } from '../services/migration.service';
 
 @Component({
   selector: 'app-database-connection',
@@ -10,15 +10,12 @@ import { MigrationService } from '../services/migration.service'; // Make sure t
 })
 export class DatabaseConnectionComponent {
 
-  // 🌟 THESE FIX YOUR HTML ERRORS
-  isLoading: boolean = false;
-  errorMessage: string = '';
+  isLoading = false;
+  errorMessage = '';
 
-  // Hardcoded active databases
-  selectedSourceDb: string = 'postgres';
-  selectedTargetDb: string = 'oracle';
+  selectedSourceDb = 'postgres';
+  selectedTargetDb = 'oracle';
 
-  // Source locked to PostgreSQL
   sourceConfig = {
     type: 'postgres',
     host: '',
@@ -28,7 +25,6 @@ export class DatabaseConnectionComponent {
     database: ''
   };
 
-  // Target locked to Oracle
   targetConfig = {
     type: 'oracle',
     host: '',
@@ -38,43 +34,89 @@ export class DatabaseConnectionComponent {
     database: ''
   };
 
-  // 🌟 INJECT ROUTER AND SERVICE HERE
   constructor(
     private router: Router,
     private migrationService: MigrationService
   ) {}
 
-  // Triggered when the user clicks Connect
   connect() {
-    // 1. Start the loading spinner and clear old errors
+
     this.isLoading = true;
     this.errorMessage = '';
 
-    console.log('Connecting Source (Postgres)...', this.sourceConfig);
-    console.log('Connecting Target (Oracle)...', this.targetConfig);
+    console.log('Source Config:', this.sourceConfig);
+    console.log('Target Config:', this.targetConfig);
 
-    // 2. forkJoin sends BOTH requests at the same time and waits for both to finish
     forkJoin({
       source: this.migrationService.connectToDatabase(this.sourceConfig),
       target: this.migrationService.connectToDatabase(this.targetConfig)
     }).subscribe({
-      next: (results) => {
-        // 3. Both succeeded! Turn off loading and navigate to dashboard
-        this.isLoading = false;
-        console.log('Both connections successful!', results);
-        this.router.navigate(['/migration']);
-      },
+ next: (response) => {
+
+  console.log('Connections Successful', response);
+
+  const payload = {
+  oracle: {
+    host: this.targetConfig.host,
+    port: Number(this.targetConfig.port),
+    username: this.targetConfig.username,
+    password: this.targetConfig.password,
+    sid: this.targetConfig.database
+  },
+
+  postgres: {
+    type: this.sourceConfig.type,
+    host: this.sourceConfig.host,
+    port: Number(this.sourceConfig.port),
+    username: this.sourceConfig.username,
+    password: this.sourceConfig.password,
+    database: this.sourceConfig.database
+  }
+};
+
+this.migrationService
+  .initializeMigration(payload)
+    .subscribe({
+
+next: () => {
+
+  localStorage.setItem(
+    'migrationPayload',
+    JSON.stringify(payload)
+  );
+
+  localStorage.setItem(
+    'sourceConfig',
+    JSON.stringify(this.sourceConfig)
+  );
+
+  localStorage.setItem(
+    'targetConfig',
+    JSON.stringify(this.targetConfig)
+  );
+
+  this.isLoading = false;
+
+  this.router.navigate(['/migration']);
+},
+
       error: (err) => {
-        // 4. One or both failed. Turn off loading and show the error on the UI
         this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Failed to connect. Please check your credentials and database ports.';
-        console.error('Connection failed:', err);
+        this.errorMessage = 'Failed to initialize migration';
+        console.error(err);
+      }
+
+    });
+},
+      error: (err) => {
+        this.isLoading = false;
+        this.errorMessage = 'Failed to connect to one or both databases';
+        console.error(err);
       }
     });
-  }
+  } 
 
   cancel() {
-    console.log('Connection cancelled');
-    this.router.navigate(['/login']); // Route back to login
+    this.router.navigate(['/login']);
   }
 }

@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { MigrateService } from './migrate.service'
+import { OracleDynamicConnectionDto, PgDynamicConnectionDto } from 'src/connection/dto/connection.dto';
 
 @Controller('migrate')
 export class MigrateController {
@@ -269,8 +270,15 @@ export class MigrateController {
     }
 
     @Post('/SCHEMAST')
-    async SCHEMAST() {
-        return await this._service.SCHEMAST()
+    async SCHEMAST(@Body() body: any) {
+
+        const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+        const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+        return await this._service.SCHEMAST(
+            oracleConfig,
+            postgresConfig
+        );
     }
 
     @Post('/IDMASTER')
@@ -508,5 +516,17 @@ export class MigrateController {
     async checkSingleSync(@Param('tableName') tableName: string) {
         // This calls the single-table check method we discussed earlier
         return await this._service.checkSingleTableSync(tableName);
+    }
+
+
+    @Post('/connectOracleDB')
+    async connectOracleDB(@Body() body: any) {
+        const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+        const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+        return await this._service.connectOracleDb(
+            oracleConfig,
+            postgresConfig
+        );
     }
 }

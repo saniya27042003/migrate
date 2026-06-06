@@ -3,7 +3,7 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 // 1. Define your dynamic variables here (or import them from your service/UI)
 const pgUser = 'postgres';
-const pgPassword = '123456789';
+const pgPassword = 'swikar1637';
 const pgHost = 'localhost';
 const pgPort = 5432;
 const pgDatabase = 'nirmiti';
