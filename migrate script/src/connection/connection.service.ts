@@ -52,8 +52,25 @@ export class DatabaseManagerService {
         `${payload.host}:${payload.port}/${payload.database}`
     });
 
+//     let connectString: string;
+
+// if (payload.database.toUpperCase() === 'XE') {
+//   // Use SID style for XE
+//   connectString = `(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=${payload.host})(PORT=${payload.port}))(CONNECT_DATA=(SID=${payload.database})))`;
+// } else {
+//   // Use SERVICE_NAME style for PDBs like XEPDB1 or FREEPDB1
+//   connectString = `(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=${payload.host})(PORT=${payload.port}))(CONNECT_DATA=(SERVICE_NAME=${payload.database})))`;
+// }
+
+// const conn = await oracledb.getConnection({
+//   user: payload.username,
+//   password: payload.password,
+//   connectString
+// });
+
     await conn.close();
 
+    await createConnection(options);
     return {
       success: true,
       message: 'Oracle connected successfully'
@@ -127,3 +144,38 @@ async fetchAllTables(dbType: string): Promise<string[]> {
   }
 }
 }
+// async checkSingleTableSync(tableName: string) {
+//   try {
+//     const oracleConn = getConnection('oracle');
+//     const pgConn = getConnection('postgres');
+    
+
+//     // Query Oracle
+//     const oracleResult = await oracleConn.query(
+//       `SELECT COUNT(*) AS CNT FROM  ${tableName}`
+//     );
+//     const oracleCount = oracleResult[0].CNT;
+
+//     // Query Postgres
+//     const pgResult = await pgConn.query(
+//       `SELECT COUNT(*) AS cnt FROM ${tableName.toLowerCase()}`
+//     );
+//     const pgCount = pgResult[0].cnt;
+
+//     return {
+//       isSynced: oracleCount === pgCount,
+//       oracleCount,
+//       pgCount,
+//     };
+//   } catch (error) {
+//     throw new HttpException(
+//       {
+//         success: false,
+//         message: `Failed to check sync for ${tableName}: ${error.message}`,
+//       },
+//       HttpStatus.INTERNAL_SERVER_ERROR,
+//     );
+//   }
+// }
+
+// }

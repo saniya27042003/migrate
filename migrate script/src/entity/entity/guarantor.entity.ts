@@ -36,8 +36,8 @@ export class GUARANTERDETAILS {
     @Column({ nullable: true })
     GAC_CUSTID: string
 
-     @Column()
-    REF_ID: number
+    //  @Column()
+    // REF_ID: number
 
     // @Column({ nullable: true })
     // ORA_GCUSTID: string

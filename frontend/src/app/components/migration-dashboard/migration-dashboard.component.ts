@@ -66,30 +66,37 @@ export class MigrationDashboardComponent implements OnInit {
 
 
   ngOnInit(): void {
-  this.loadDatabaseSchema();
-}
+    this.loadDatabaseSchema();
+  }
 
 
   /**
    * Step 1: Check count before migrating.
    * Triggers the migration service check.
    */
- startMigration(tableName: string) {
+  startMigration(tableName: string) {
+    // 1. Retrieve the payload
+    const storedPayload = localStorage.getItem('migrationPayload');
+    const fullPayload = storedPayload ? JSON.parse(storedPayload) : null;
+
+    if (!fullPayload) {
+      Swal.fire({ icon: 'error', title: 'Config Missing', text: 'Please connect to the database first!' });
+      return;
+    }
+
     this.isLoading = true;
     this.progress = 0;
 
-    this.migrationService.checkIfTableIsSynced(tableName).subscribe({
-      next: (res) => { // res now contains the counts
+    // 2. Pass both tableName AND fullPayload
+    this.migrationService.checkIfTableIsSynced(tableName, fullPayload).subscribe({
+      next: (res) => {
         if (res.isSynced) {
           this.isLoading = false;
-
-          // Use 'html' to show the formatted counts
           Swal.fire({
             icon: 'info',
             title: 'Already Migrated',
             html: `<b>${tableName}</b> already has matching rows.<br><br>Oracle: <b>${res.oracleCount}</b> rows<br>Postgres: <b>${res.pgCount}</b> rows`
           });
-
           this.migratedTables.add(tableName);
           this.migratedTables = new Set(this.migratedTables);
         } else {
@@ -107,17 +114,27 @@ export class MigrationDashboardComponent implements OnInit {
    * Runs only if the pre-check fails (meaning tables are not synced).
    */
   private executeMigration(tableName: string) {
+    // 1. You already have the payload here:
+    const storedPayload = localStorage.getItem('migrationPayload');
+    const fullPayload = storedPayload ? JSON.parse(storedPayload) : null;
+
+    if (!fullPayload) {
+      Swal.fire({ icon: 'error', title: 'Config Missing', text: 'Please connect to the database first!' });
+      return;
+    }
+
     const interval = setInterval(() => {
       if (this.progress < 90) this.progress += 10;
     }, 500);
 
-    this.migrationService.migrateTable(tableName).subscribe({
+    // 2. Migration execution call...
+    this.migrationService.migrateTable(tableName, fullPayload).subscribe({
       next: () => {
         clearInterval(interval);
         this.progress = 100;
 
-        // 🌟 NEW: Fetch the final counts to show in the success popup!
-        this.migrationService.checkIfTableIsSynced(tableName).subscribe({
+        // 3. 🌟 FIX THIS LINE: Pass 'fullPayload' as the second argument
+        this.migrationService.checkIfTableIsSynced(tableName, fullPayload).subscribe({
           next: (finalStats) => {
             this.isLoading = false;
 
@@ -130,7 +147,6 @@ export class MigrationDashboardComponent implements OnInit {
             this.migratedTables.add(tableName);
             this.migratedTables = new Set(this.migratedTables);
 
-            // Auto-refresh the parent check so the red error goes away immediately!
             if (this.selectedParent) {
               this.checkTableSync(this.selectedParent);
             }
@@ -180,7 +196,21 @@ export class MigrationDashboardComponent implements OnInit {
     this.validationError = null;
 
     // Use your existing service to call the check-sync endpoint
-    this.migrationService.checkDependencySync(master, deps).subscribe({
+    //this.migrationService.checkDependencySync(master, deps).subscribe({
+    // const storedPayload = localStorage.getItem('migrationPayload');
+    // const fullPayload = storedPayload ? JSON.parse(storedPayload) : null;
+
+    // if (!fullPayload) {
+    //   console.error('Migration payload not found');
+    //   return;
+    // }
+
+    // this.migrationService.checkDependencySync(
+    //   master,
+    //   deps,
+    //   fullPayload
+    // ).subscribe({
+     this.migrationService.checkDependencySync(master, deps).subscribe({
       next: (res: { isSynced: boolean, mismatched: string[] }) => {
         this.isChecking = false;
         if (!res.isSynced) {
@@ -197,27 +227,34 @@ export class MigrationDashboardComponent implements OnInit {
 
   fetchedDatabaseTables: string[] = [];
 
+  loadDatabaseSchema() {
+    // 1. Retrieve the payload (Ensure this key matches where you store your connection info)
+    const payload = JSON.parse(localStorage.getItem('migrationPayload'));
 
-loadDatabaseSchema() {
-  this.isLoading = true;
-  this.migrationService.fetchSourceTables().subscribe({
-    next: (res) => {
-      this.isLoading = false;
-      this.fetchedDatabaseTables = res.data; // This now holds EVERY table in Oracle
-
-      // Optional: You can filter your hardcoded transaction/foundation lists
-      // to only show tables that ACTUALLY exist in the fetched Oracle schema
-      this.foundationTables = this.foundationTables.filter(t => this.fetchedDatabaseTables.includes(t));
-      this.transactionTables = this.transactionTables.filter(t => this.fetchedDatabaseTables.includes(t));
-
-      console.log(`Successfully loaded ${res.count} tables from Oracle.`);
-    },
-    error: (err) => {
-      this.isLoading = false;
-      console.error("Make sure you submitted the connection form first!", err);
+    if (!payload) {
+      console.error("No connection payload found in localStorage.");
+      return;
     }
-  });
-}
+
+    this.isLoading = true;
+
+    // 2. Pass the payload to the service call
+    this.migrationService.fetchSourceTables(payload).subscribe({
+      next: (res) => {
+        this.isLoading = false;
+        this.fetchedDatabaseTables = res.data;
+
+        this.foundationTables = this.foundationTables.filter(t => this.fetchedDatabaseTables.includes(t));
+        this.transactionTables = this.transactionTables.filter(t => this.fetchedDatabaseTables.includes(t));
+
+        console.log(`Successfully loaded ${res.count} tables from Oracle.`);
+      },
+      error: (err) => {
+        this.isLoading = false;
+        console.error("Make sure you submitted the connection form first!", err);
+      }
+    });
+  }
 
 
 }

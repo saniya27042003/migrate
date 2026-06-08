@@ -6,42 +6,89 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class MigrationService {
+  // Base path for migration operations
   private baseUrl = 'http://localhost:7272/migrate';
-
-  private dbUrl = 'http://localhost:7272/migrate/connectOracleDB';
 
   constructor(private http: HttpClient) { }
 
-  connectToDatabase(config: any): Observable<any> {
-    return this.http.post(`${this.dbUrl}/connect`, config);
+  /**
+   * Connects to the Oracle Database
+   * Maps to POST /migrate/connectOracleDB
+   */
+  // connectToOracle(config: any): Observable<any> {
+  //   console.log('Attempting Oracle connection with:', { host: config.host, port: config.port, user: config.username, database: config.database });
+  //   return this.http.post(`${this.baseUrl}/connectOracleDB`, config);
+  // }
+
+  // Add this to your MigrationService class
+  // connectToPostgres(config: any): Observable<any> {
+  //   return this.http.post('http://localhost:7272/database-mapping/connect-server', config);
+  // }
+
+  connectToOracle(fullPayload: any): Observable<any> {
+    // Now logging the specific oracle configuration from the nested object
+    console.log('Attempting Oracle connection with:', fullPayload.oracle);
+
+    // Sending the entire payload (oracle + postgres) to the backend
+    return this.http.post(`${this.baseUrl}/connectOracleDB`, fullPayload);
   }
 
+  /**
+   * Triggers the main migration script
+   * Maps to POST /migrate/script
+   */
   initializeMigration(config: any): Observable<any> {
-  return this.http.post(
-    `${this.baseUrl}/script`,
-    config
-  );
-}
-
-  // Method to fetch the Oracle tables dynamically
-  fetchSourceTables(): Observable<{success: boolean, count: number, data: string[]}> {
-    return this.http.get<{success: boolean, count: number, data: string[]}>(`${this.dbUrl}/tables/oracle`);
+    return this.http.post(`${this.baseUrl}/script`, config);
   }
 
-  // --- Your Existing Methods Below ---
-
-  migrateTable(tableName: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}/${tableName}`, {});
+  /**
+   * Fetches the source tables from Oracle
+   */
+  // Update this in MigrationService (Angular)
+  fetchSourceTables(fullPayload: any): Observable<any> {
+    // Send the fullPayload (oracle + postgres) so the backend can connect
+    return this.http.post(`${this.baseUrl}/tables/oracle`, fullPayload);
   }
 
+  /**
+   * Migrates a specific table
+   */
+  migrateTable(tableName: string, fullPayload: any): Observable<any> {
+    // This will now hit: http://localhost:7272/migrate/SCHEMAST
+    return this.http.post(`${this.baseUrl}/${tableName}`, fullPayload);
+  }
+
+  /**
+   * Checks for dependency sync issues
+   */
   checkDependencySync(tableName: string, dependencies: string[]): Observable<{ isSynced: boolean, mismatched: string[] }> {
     return this.http.post<{ isSynced: boolean, mismatched: string[] }>(
       `${this.baseUrl}/check-sync`,
       { tableName, dependencies }
     );
   }
+  // checkDependencySync(
+  //   tableName: string,
+  //   dependencies: string[],
+  //   fullPayload: any
+  // ): Observable<{ isSynced: boolean, mismatched: string[] }> {
 
-  checkIfTableIsSynced(tableName: string): Observable<{ isSynced: boolean, oracleCount: number, pgCount: number }> {
-    return this.http.get<{ isSynced: boolean, oracleCount: number, pgCount: number }>(`${this.baseUrl}/check-single-sync/${tableName}`);
+  //   return this.http.post<{ isSynced: boolean, mismatched: string[] }>(
+  //     `${this.baseUrl}/check-sync`,
+  //     {
+  //       tableName,
+  //       dependencies,
+  //       oracle: fullPayload.oracle
+  //     }
+  //   );
+  // }
+
+  /**
+   * Checks if a single table is synchronized
+   */
+  // src/app/services/migration.service.ts
+  checkIfTableIsSynced(tableName: string, fullPayload: any): Observable<any> {
+    // Use POST to carry the configuration payload
+    return this.http.post(`${this.baseUrl}/check-single-sync/${tableName}`, fullPayload);
   }
 }

@@ -336,10 +336,10 @@ export class MigrateService {
     private connection: Connection
   ) { }
   user = "BANKUSER"
-  password = "1234"
+  password = "bankuser"
   // // user = "APPACHOPDE"
   // // password = "APPACHOPDE"
-  SID = "FREEPDB1"
+  SID = "XE"
   connectionByOracle : any
   dataSourcePg : any
 
@@ -431,7 +431,7 @@ export class MigrateService {
 
   // result = await connection.execute(sql, binds, options);
   // connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = 1521))(CONNECT_DATA =(SID=${this.SID} )))`
-  connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.137.159)(PORT = 1521))(CONNECT_DATA =(SERVICE_NAME=${this.SID} )))`
+  connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = 1521))(CONNECT_DATA =(SERVICE_NAME=${this.SID} )))`
   // connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = BANK30)(PORT = 1521))(CONNECT_DATA =(SID=${this.SID} )))`
   // connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = bank7)(PORT = 1521))(CONNECT_DATA =(SID=${this.SID} )))`
   // connectionString = `(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = 1521))(CONNECT_DATA =(SID=${this.SID} )))`
@@ -718,14 +718,17 @@ export class MigrateService {
   async GUARANTERDETAILS() {
   
 
-     let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select * from GUARANTERDETAILS`)
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select * from GUARANTERDETAILS`)
       let data = await this.jsonConverter(result);
+       const guaranterdetailsRepo = this.dataSourcePg.getRepository(GUARANTERDETAILS);
+
+
 
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from GUARANTERDETAILS`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from GUARANTERDETAILS`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    //await connection2.close()
     this.count = result1[0].COUNT;
     await this.GUARANTERDETAILSSUB(data);
   }
@@ -747,13 +750,14 @@ export class MigrateService {
 
   //syspara
   async SYSPARA() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM SYSPARA')
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM SYSPARA')
       let data = await this.jsonConverter(result);
+      const sysparaRepo = this.dataSourcePg.getRepository(SYSPARA);
       let ele = data[0]
       let sys = new SYSPARA()
       sys['SYSPARA_CODE'] = ele.SYSPARA_CODE
@@ -874,10 +878,11 @@ export class MigrateService {
       sys['PRODUCTWISE_INT_ROUND'] = ele.PRODUCTWISE_INT_ROUND
       sys['IS_ALLOW_OLD_LOAN_EDIT'] = ele.IS_ALLOW_OLD_LOAN_EDIT
       sys['IS_MONTHLY_INTPOST_APPLY_TO_LN'] = ele.IS_MONTHLY_INTPOST_APPLY_TO_LN
-      let insertSyspara = await queryRunner.manager.insert(SYSPARA, sys)
-      await queryRunner.commitTransaction();
+      // let insertSyspara = await queryRunner.manager.insert(SYSPARA, sys)
+      let insertSyspara = await sysparaRepo.save(sys)
+      //await queryRunner.commitTransaction();
       console.log('SYSPARA')
-      await connection2.close()
+      //await connection2.close()
     }
     catch (error) {
       console.log(error)
@@ -885,12 +890,12 @@ export class MigrateService {
         status: HttpStatus.FORBIDDEN,
         error: 'Issue in syspara' + `${error.stack}`,
       }, HttpStatus.FORBIDDEN);
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     }
     finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
@@ -1090,8 +1095,6 @@ export class MigrateService {
           // let update = await connection2.execute(`update schemast set TYPEID=${scheme.id} where S_APPL = ${ele.S_APPL}`);
           // await connection2.commit();
         }
-
-        return "success"
         // await connection2.close();
         // console.log('SCHEMAST Completed')
       }
@@ -1511,9 +1514,11 @@ export class MigrateService {
     await queryRunner.startTransaction();
     try {
       try {
-        let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-        let result = await connection2.execute('SELECT acmaster.*,schemast.S_APPL as actype FROM ACMASTER LEFT JOIN SCHEMAST ON ACMASTER.AC_TYPE=SCHEMAST.S_APPL ORDER BY AC_NO');
+        //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+        let result = await this.connectionByOracle.execute('SELECT acmaster.*,schemast.S_APPL as actype FROM ACMASTER LEFT JOIN SCHEMAST ON ACMASTER.AC_TYPE=SCHEMAST.S_APPL ORDER BY AC_NO');
         let data = await this.jsonConverter(result);
+        const acmasterRepo = this.dataSourcePg.getRepository(ACMASTER);
+
         for (let ele of data) {
           let newObj = new ACMASTER();
           newObj['id'] = ele.AC_NO;
@@ -1586,9 +1591,10 @@ export class MigrateService {
           // newObj['AC_TYPE'] = ele.ACTYPE;
           newObj['AC_TYPE'] = 45;
           newObj['IS_ACTIVE'] = true;
-          await queryRunner.manager.insert(ACMASTER, newObj);
+          //await queryRunner.manager.insert(ACMASTER, newObj);
+          await acmasterRepo.save(newObj);
         }
-        await connection2.close()
+        //await connection2.close()
         console.log('ACMASTER Completed')
       }
       catch (error) {
@@ -1600,11 +1606,11 @@ export class MigrateService {
       await queryRunner.commitTransaction();
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
@@ -1640,9 +1646,10 @@ export class MigrateService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM TERMMASTER order by SR_NO');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM TERMMASTER order by SR_NO');
       let data = await this.jsonConverter(result);
+      const termmasterRepo = this.dataSourcePg.getRepository(TERMMASTER);
       for (let ele of data) {
         let obj = new TERMMASTER()
         obj['SR_NO'] = ele.SR_NO
@@ -1650,18 +1657,19 @@ export class MigrateService {
         obj['TERM_TYPE'] = ele.TERM_TYPE
         obj['PERIOD_FROM'] = ele.PERIOD_FROM
         obj['PERIOD_TO'] = ele.PERIOD_TO
-        let advo = await queryRunner.manager.insert(TERMMASTER, obj)
+        //let advo = await queryRunner.manager.insert(TERMMASTER, obj)
+        let advo = await termmasterRepo.save(obj);
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('TERMMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      // await queryRunner.release();
     }
   }
 
@@ -1671,9 +1679,10 @@ export class MigrateService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from SIZEWISEBALANCE order by amount_from');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from SIZEWISEBALANCE order by amount_from');
       let data = await this.jsonConverter(result);
+      const sizewisebalanceRepo = this.dataSourcePg.getRepository(SIZEWISEBALANCE);
       for (let ele of data) {
         let obj = new SIZEWISEBALANCE()
         obj['SR_NO'] = ele.SR_NO
@@ -1687,31 +1696,32 @@ export class MigrateService {
         obj['TO_MONTHS'] = ele.TO_MONTHS
         obj['TO_DAYS'] = ele.TO_DAYS
         obj['DEDUCTION_PERCENT'] = ele.DEDUCTION_PERCENT
-        let advo = await queryRunner.manager.insert(SIZEWISEBALANCE, obj)
+        let advo = await sizewisebalanceRepo.save(obj);
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      //await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('SIZEWISEBALANCE')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   //INFORMATION
   //ADVOCATE MASTER
   async ADVOCATEMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM ADVOCATEMASTER order by CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM ADVOCATEMASTER order by CODE');
       let data = await this.jsonConverter(result);
-      let pgData = await this.ADVOCATEMASTERService.find()
+      const advocatemasterRepo = this.dataSourcePg.getRepository(ADVOCATEMASTER);
+      let pgData = await advocatemasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
         }
@@ -1719,32 +1729,33 @@ export class MigrateService {
           let advocate = new ADVOCATEMASTER()
           advocate['CODE'] = ele.CODE
           advocate['NAME'] = ele.NAME
-          let advo = await queryRunner.manager.insert(ADVOCATEMASTER, advocate)
+          let advo = await advocatemasterRepo.save(advocate)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      //await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('ADVOCATEMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //BALACATA
   async BALACATA() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let connection2 = await this.connectionByOracle.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       let result = await connection2.execute('SELECT * FROM BALACATA order by BC_CODE');
       let data = await this.jsonConverter(result);
-      let pgData = await this.BALACATAService.find()
+      const balacataRepo = this.dataSourcePg.getRepository(BALACATA);
+      let pgData = await balacataRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['BC_NAME'] == ele.BC_NAME)) {
         }
@@ -1752,32 +1763,34 @@ export class MigrateService {
           let obj = new BALACATA()
           obj['BC_NAME'] = ele.BC_NAME.replace("\x00", "")
           obj['BC_MINBAL'] = ele.BC_MINBAL
-          let insertObj = await queryRunner.manager.insert(BALACATA, obj)
+          //let insertObj = await queryRunner.manager.insert(BALACATA, obj)
+          let insertObj = await balacataRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('BALACATA')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //PREFIX
   async PREFIX() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM PREFIX order by SR_NO');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM PREFIX order by SR_NO');
       let data = await this.jsonConverter(result);
-      let pgData = await this.PREFIXService.find()
+      const prefixRepo = this.dataSourcePg.getRepository(PREFIX);
+      let pgData = await prefixRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['PREFIX'] == ele.PREFIX)) {
         }
@@ -1786,32 +1799,33 @@ export class MigrateService {
           obj['PREFIX'] = ele.PREFIX
           obj['SEX'] = ele.SEX
           obj['PREFIX_REG'] = ele.PREFIX_REG
-          let insertObj = await queryRunner.manager.insert(PREFIX, obj)
+          let insertObj = await prefixRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('PREFIX')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //PRIORITYSECTORMASTER
   async PRIORITYSECTORMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM PRIORITYMASTER order by CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM PRIORITYMASTER order by CODE');
       let data = await this.jsonConverter(result);
-      let pgData = await this.PRIORITYSECTORMASTERService.find()
+      const prioritySectorMasterRepo = this.dataSourcePg.getRepository(PRIORITYSECTORMASTER);
+      let pgData = await prioritySectorMasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
         }
@@ -1821,32 +1835,33 @@ export class MigrateService {
           obj['SUB2_CODE'] = ele.SUB2_CODE
           obj['SUB3_CODE'] = ele.SUB3_CODE
           obj['NAME'] = ele.NAME
-          let insertObj = await queryRunner.manager.insert(PRIORITYSECTORMASTER, obj)
+          let insertObj = await prioritySectorMasterRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('PRIORITYSECTORMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //RECOVERYCLEARKMASTER
   async RECOVERYCLEARKMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM RECOVERYCLEARKMASTER order by CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM RECOVERYCLEARKMASTER order by CODE');
       let data = await this.jsonConverter(result);
-      let pgData = await this.RECOVERYCLEARKMASTERService.find()
+      const recoveryclearkmasterRepo = this.dataSourcePg.getRepository(RECOVERYCLEARKMASTER);
+      let pgData = await recoveryclearkmasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
         }
@@ -1854,64 +1869,69 @@ export class MigrateService {
           let obj = new RECOVERYCLEARKMASTER()
           obj['NAME'] = ele.NAME
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(RECOVERYCLEARKMASTER, obj)
+          //let insertObj = await queryRunner.manager.insert(RECOVERYCLEARKMASTER, obj)
+          let insertObj = await recoveryclearkmasterRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // return "success"
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('RECOVERYCLEARKMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //RISKCATEGORYMASTER
   async RISKCATEGORYMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM RISKCATEGORYMASTER order by CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM RISKCATEGORYMASTER order by CODE');
       let data = await this.jsonConverter(result);
-      let pgData = await this.RISKCATEGORYMASTERService.find()
+      const riskcategorymasterRepo = this.dataSourcePg.getReposiory(RISKCATEGORYMASTER);
+      let pgData = await riskcategorymasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
         }
         else {
           let obj = new RISKCATEGORYMASTER()
           obj['NAME'] = ele.NAME
-          let insertObj = await queryRunner.manager.insert(RISKCATEGORYMASTER, obj)
+          //let insertObj = await queryRunner.manager.insert(RISKCATEGORYMASTER, obj)
+          let insertObj = await riskcategorymasterRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+        // await connection2.close()
+        // await queryRunner.commitTransaction();
       console.log('RISKCATEGORYMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //SALARYDIVISIONMASTER
   async SALARYDIVISIONMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+      // let queryRunner = await this.connection.createQueryRunner();
+      // await queryRunner.connect();
+      // await queryRunner.startTransaction();
     try {
       let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM SALARYDIVISIONMASTER order by CODE');
+      let result = await this.connectionByOracle.execute('SELECT * FROM SALARYDIVISIONMASTER order by CODE');
       let data = await this.jsonConverter(result);
-      let pgData = await this.SALARYDIVISIONMASTERService.find()
+      const salarydivisionmasterRepo = this.dataSourcePg.getRepository(SALARYDIVISIONMASTER);
+      let pgData = await salarydivisionmasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
         }
@@ -1925,32 +1945,34 @@ export class MigrateService {
           obj['PHNO'] = ele.PHNO
           obj['MOBNO'] = ele.MOBNO
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(SALARYDIVISIONMASTER, obj)
+          //let insertObj = await queryRunner.manager.insert(SALARYDIVISIONMASTER, obj)
+          let insertObj = await salarydivisionmasterRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('SALARYDIVISIONMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      // await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      // await queryRunner.release();
     }
   }
 
   //SUBSALARYMASTER
   async SUBSALARYMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM SUBSALARYMASTER order by CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM SUBSALARYMASTER order by CODE');
       let data = await this.jsonConverter(result);
-      let pgData = await this.SUBSALARYMASTERService.find()
+      const subsalarymasterRepo = this.dataSourcePg.getRepository(SUBSALARYMASTER);
+      let pgData = await subsalarymasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
         }
@@ -1965,125 +1987,130 @@ export class MigrateService {
           obj['MOBNO'] = ele.MOBNO
           obj['SAL_CODE'] = ele.SAL_CODE
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(SUBSALARYMASTER, obj)
+          // let insertObj = await queryRunner.manager.insert(SUBSALARYMASTER, obj)
+          let insertObj = await subsalarymasterRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('SUBSALARYMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //WEAKERMASTER
   async WEAKERMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM WEAKERMASTER order by CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM WEAKERMASTER order by CODE');
       let data = await this.jsonConverter(result);
-      let pgData = await this.WEAKERMASTERService.find()
+      const weeakermasterRepo = this.dataSourcePg.getRepository(WEAKERMASTER);
+      let pgData = await weeakermasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
         }
         else {
           let obj = new WEAKERMASTER()
           obj['NAME'] = ele.NAME
-          let insertObj = await queryRunner.manager.insert(WEAKERMASTER, obj)
+          let insertObj = await weeakermasterRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      //await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('WEAKERMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //TDRECEIPTMASTER
   async TDRECEIPTMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+      // let queryRunner = await this.connection.createQueryRunner();
+      // await queryRunner.connect();
+      // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from TDRECEIPTMASTER');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from TDRECEIPTMASTER');
       let data = await this.jsonConverter(result);
+      const tdreceiptmasterRepo = this.dataSourcePg.getRepository(TDRECEIPTMASTER);
       for (let ele of data) {
         let obj = new TDRECEIPTMASTER()
         obj['RECEIPT_TYPE'] = ele.RECEIPT_TYPE
         obj['LAST_RECEIPT_NO'] = ele.LAST_RECEIPT_NO
         obj['BRANCH_CODE'] = this.BRANCH_CODE
-        let insertObj = await queryRunner.manager.insert(TDRECEIPTMASTER, obj)
+        let insertObj = await tdreceiptmasterRepo.save(obj)
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      //await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('TDRECEIPTMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //AUTHORITYMASTER
   async AUTHORITYMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM AUTHORITYMASTER order by CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM AUTHORITYMASTER order by CODE');
       let data = await this.jsonConverter(result);
-      let pgData = await this.AUTHORITYMASTERService.find()
+      const authoritymasterRepo = this.dataSourcePg.getRepository(AUTHORITYMASTER);
+      let pgData = await authoritymasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
         }
         else {
           let obj = new AUTHORITYMASTER()
           obj['NAME'] = ele.NAME.replace("\x00", "")
-          let insertObj = await queryRunner.manager.insert(AUTHORITYMASTER, obj)
+          let insertObj = await authoritymasterRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      //await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('AUTHORITYMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //LOCKERRACKMASTER
   async LOCKERRACKMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM LOCKERRACKMASTER order by RACK_NO');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM LOCKERRACKMASTER order by RACK_NO');
       let data = await this.jsonConverter(result);
-      let pgData = await this.LOCKERRACKMASTERService.find()
+      const lockerrackmasterRepo = this.dataSourcePg.getRepository(LOCKERRACKMASTER);
+      let pgData = await lockerrackmasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['RACK_DESC'] == ele.RACK_DESC)) {
         }
@@ -2093,32 +2120,34 @@ export class MigrateService {
           obj['LOCKER_FROMNO'] = ele.LOCKER_FROMNO
           obj['LOCKER_TONO'] = ele.LOCKER_TONO
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(LOCKERRACKMASTER, obj)
+          //let insertObj = await queryRunner.manager.insert(LOCKERRACKMASTER, obj)
+          let insertObj = await lockerrackmasterRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('LOCKERRACKMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //LOCKERSIZE
   async LOCKERSIZE() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM LOCKERSIZE order by SIZE_SR_NO');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM LOCKERSIZE order by SIZE_SR_NO');
       let data = await this.jsonConverter(result);
-      let pgData = await this.LOCKERSIZEService.find()
+      const lockersizeRepo = this.dataSourcePg.getRepository(LOCKERSIZE);
+      let pgData = await lockersizeRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['SIZE_NAME'] == ele.SIZE_NAME)) {
         }
@@ -2127,32 +2156,33 @@ export class MigrateService {
           obj['SIZE_NAME'] = ele.SIZE_NAME
           obj['RENT'] = ele.RENT
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(LOCKERSIZE, obj)
+          let insertObj = await lockersizeRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('LOCKERSIZE')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //LOCKERMASTER
   async LOCKERMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    //let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select LOCKERMASTER.*, lockersize.SIZE_SR_NO from lockermaster left join lockersize on lockermaster.SIZE_SR_NO=lockersize.SIZE_SR_NO');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select LOCKERMASTER.*, lockersize.SIZE_SR_NO from lockermaster left join lockersize on lockermaster.SIZE_SR_NO=lockersize.SIZE_SR_NO');
       let data = await this.jsonConverter(result);
-      let pgData = await this.LOCKERMASTERService.find()
+      const lockermasterRepo = this.dataSourcePg.getRepository(LOCKERMASTER);
+      let pgData = await lockermasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['LOCKER_NO'] == ele.LOCKER_NO)) {
         }
@@ -2162,63 +2192,65 @@ export class MigrateService {
           obj['KEY_NO'] = ele.KEY_NO
           obj['SIZE_SR_NO'] = ele.SIZE_SR_NO
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(LOCKERMASTER, obj)
+          let insertObj = await lockermasterRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('LOCKERMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //ITEMCATEGORYMASTER
   async ITEMCATEGORYMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    //let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM ITEMCATEGORY order by CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM ITEMCATEGORY order by CODE');
       let data = await this.jsonConverter(result);
-      let pgData = await this.ITEMCATEGORYMASTERService.find()
+      const itemcategorymasterRepo = this.dataSourcePg.getRepository(ITEMCATEGORYMASTER);
+      let pgData = await itemcategorymasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
         }
         else {
           let obj = new ITEMCATEGORYMASTER()
           obj['NAME'] = ele.NAME
-          let insertObj = await queryRunner.manager.insert(ITEMCATEGORYMASTER, obj)
+          let insertObj = await itemcategorymasterRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('ITEMCATEGORYMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //DOCUMENTMASTER
   async DOCUMENTMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM DOCUMENTMASTER order by CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM DOCUMENTMASTER order by CODE');
       let data = await this.jsonConverter(result);
+      const documentmasterRepo = this.dataSourcePg.getRepository(DOCUMENTMASTER);
       let pgData = await this.DOCUMENTMASTERService.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
@@ -2226,64 +2258,68 @@ export class MigrateService {
         else {
           let obj = new DOCUMENTMASTER()
           obj['NAME'] = ele.NAME
-          let insertObj = await queryRunner.manager.insert(DOCUMENTMASTER, obj)
+          // let insertObj = await queryRunner.manager.insert(DOCUMENTMASTER, obj)
+          let insertObj = await documentmasterRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('DOCUMENTMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //COURTMASTER
   async COURTMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM COURTMASTER order by CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM COURTMASTER order by CODE');
       let data = await this.jsonConverter(result);
-      let pgData = await this.COURTMASTERService.find()
+      const courtmasterRepo = this.dataSourcePg.getRepository(COURTMASTER);
+      let pgData = await courtmasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
         }
         else {
           let obj = new COURTMASTER()
           obj['NAME'] = ele.NAME.replace("\x00", "")
-          let insertObj = await queryRunner.manager.insert(COURTMASTER, obj)
+          //let insertObj = await queryRunner.manager.insert(COURTMASTER, obj)
+          let insertObj =  await courtmasterRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('COURTMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //CLEARING BRANCHMASTER
   async BRANCHMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM BRANCHMASTER order by CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM BRANCHMASTER order by CODE');
       let data = await this.jsonConverter(result);
-      let pgData = await this.BRANCHMASTERService.find()
+      const branchmasterRepo = this.dataSourcePg.getRepository(BRANCHMASTER);
+      let pgData = await branchmasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
         }
@@ -2291,31 +2327,33 @@ export class MigrateService {
           let obj = new BRANCHMASTER()
           obj['NAME'] = ele.NAME.replace("\x00", "")
           obj['AC_NO'] = ele.AC_NO == 0 ? null : ele.AC_NO
-          let insertObj = await queryRunner.manager.insert(BRANCHMASTER, obj)
+          //let insertObj = await queryRunner.manager.insert(BRANCHMASTER, obj)
+          let insertObj = await branchmasterRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('BRANCHMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //CATEGORYMASTER
   async CATEGORYMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM CATEGORYMASTER order by CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM CATEGORYMASTER order by CODE');
       let data = await this.jsonConverter(result);
+      const categorymasterRepo = this.dataSourcePg.getRepository(CATEGORYMASTER);
       let pgData = await this.CATEGORYMASTERService.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
@@ -2323,24 +2361,25 @@ export class MigrateService {
         else {
           let obj = new CATEGORYMASTER()
           obj['NAME'] = ele.NAME.replace("\x00", "")
-          let insertObj = await queryRunner.manager.insert(CATEGORYMASTER, obj)
+          //let insertObj = await queryRunner.manager.insert(CATEGORYMASTER, obj)
+          let insertObj = await categorymasterRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('CATEGORYMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //CASTMASTER
-  async CASTMASTER() {
+  async CASTMASTER(config: OracleDynamicConnectionDto,  dto : PgDynamicConnectionDto){
     // let queryRunner = await this.connection.createQueryRunner();
     // await queryRunner.connect();
     // await queryRunner.startTransaction();
@@ -2378,14 +2417,15 @@ export class MigrateService {
 
   //BANKDETAILS
   async BANKDETAILS() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
       //can store single record
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM BANKDETAILS order by BANK_CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM BANKDETAILS order by BANK_CODE');
       let data = await this.jsonConverter(result);
+      const bankdetailsRepo = this.dataSourcePg.getRepository(BANKDETAILS);
       for (let ele of data) {
         let obj = new BANKDETAILS()
         obj['NAME'] = ele.NAME
@@ -2404,30 +2444,32 @@ export class MigrateService {
         obj['SBI_BANKCODE'] = ele.SBI_BANKCODE
         obj['MOB_NUM'] = null
         obj['STATE'] = null
-        let insertObj = await queryRunner.manager.insert(BANKDETAILS, obj)
+        //let insertObj = await queryRunner.manager.insert(BANKDETAILS, obj)
+        let insertObj = await bankdetailsRepo.save()
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('BANKDETAILS')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   //City master
   async CITYMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
       // let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM CITYMASTER WHERE CITY_CODE > 22 order by CITY_CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM CITYMASTER WHERE CITY_CODE > 22 order by CITY_CODE');
       let data = await this.jsonConverter(result);
+      const citymasterRepo = this.dataSourcePg.getRepository(CITYMASTER);
       for (let ele of data) {
         if (this.PostCitymaster.some(pgData => pgData['CITY_NAME'] == ele.CITY_NAME)) {
         }
@@ -2440,32 +2482,34 @@ export class MigrateService {
           newObj['STATE_CODE'] = ele.STATE_CODE;
           newObj['REGION_CODE'] = ele.REGION_CODE;
           newObj['DISTANCE'] = ele.DISTANCE;
-          await queryRunner.manager.save(CITYMASTER, newObj);
+          //await queryRunner.manager.save(CITYMASTER, newObj);
+          await citymasterRepo.save(newObj);
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('CITYMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //BANKMASTER
   async BANKMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM BANKMASTER WHERE BANK_CODE > 1 order by BANK_CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM BANKMASTER WHERE BANK_CODE > 1 order by BANK_CODE');
       let data = await this.jsonConverter(result);
-      let pgData = await this.BANKMASTERService.find()
+      const bankmasterRepo = this.dataSourcePg.getRepository(BANKMASTER);
+      let pgData = await bankmasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['BANK_NAME'] == ele.BANK_NAME)) {
         }
@@ -2481,33 +2525,35 @@ export class MigrateService {
           obj['BANKERS_COMM_APPLICABLE'] = ele.BANKERS_COMM_APPLICABLE == 0 ? '0' : '1'
           obj['RIGHT_TO_PREPARE_DD'] = ele.RIGHT_TO_PREPARE_DD == 0 ? '0' : '1'
           obj['PARTICIPATE_IN_CLEARING'] = ele.PARTICIPATE_IN_CLEARING == 0 ? '0' : '1'
-          let insertObj = await queryRunner.manager.insert(BANKMASTER, obj)
+          //let insertObj = await queryRunner.manager.insert(BANKMASTER, obj)
+          let insertObj = await bankmasterRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('BANKMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //DEPRCATEGORY
   async DEPRCATEGORY() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM deprcategory order by CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM deprcategory order by CODE');
       let data = await this.jsonConverter(result);
       // let acmaster = await this.ACMASTERService.find()
-      let pgData = await this.DEPRCATEGORYService.find()
+      const deprcategoryRepo = this.dataSourcePg.getRepository(DEPRCATEGORY);
+      let pgData = await deprcategoryRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
         }
@@ -2519,31 +2565,33 @@ export class MigrateService {
           newObj['NAME'] = ele.NAME.replace("\x00", "");
           newObj['AC_NO'] = ele.AC_NO;
           newObj['BRANCH_CODE'] = this.BRANCH_CODE;
-          await queryRunner.manager.insert(DEPRCATEGORY, newObj);
+          //await queryRunner.manager.insert(DEPRCATEGORY, newObj);
+          await deprcategoryRepo.save(newObj);
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('DEPRCATEGORY')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //DIRECTORMASTER
   async DIRECTORMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM DIRECTORMASTER order by CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM DIRECTORMASTER order by CODE');
       let data = await this.jsonConverter(result);
+      const directormasterRepo = this.dataSourcePg.getRepository(DIRECTORMASTER);
       for (let ele of data) {
         // if (this.PostdirectorMaster.some(pgData => pgData['NAME'] == ele.NAME)) {
         // }
@@ -2562,163 +2610,173 @@ export class MigrateService {
         obj['CODE'] = ele.CODE
         // obj['REF_ID'] = ele.REF_ID
         obj['BRANCH_CODE'] = this.BRANCH_CODE
-        await queryRunner.manager.save(DIRECTORMASTER, obj);
+        //await queryRunner.manager.save(DIRECTORMASTER, obj);
+        await directormasterRepo.save(obj);
         //}
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('DIRECTORMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //HEALTHMASTER
   async HEALTHMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM HEALTHMASTER WHERE CODE > 1 order by CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM HEALTHMASTER WHERE CODE > 1 order by CODE');
       let data = await this.jsonConverter(result);
-      let pgData = await this.HEALTHMASTERService.find()
+      const healthmasterRepo = this.dataSourcePg.getRepository(HEALTHMASTER);
+      let pgData = await healthmasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
         }
         else {
           let newObj = new HEALTHMASTER();
           newObj['NAME'] = ele.NAME.replace("\x00", "");
-          await queryRunner.manager.save(HEALTHMASTER, newObj);
+          //await queryRunner.manager.save(HEALTHMASTER, newObj);
+          await healthmasterRepo.save(newObj);
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('HEALTHMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+     // await queryRunner.release();
     }
   }
   //INDUSTRYMASTER
   async INDUSTRYMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM INDUSTRYMASTER  order by CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM INDUSTRYMASTER  order by CODE');
       let data = await this.jsonConverter(result);
-      let pgData = await this.INDUSTRYMASTERService.find()
+      const industrymasterRepo = this.dataSourcePg.getRepository(INDUSTRYMASTER);
+      let pgData = await industrymasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
         }
         else {
           let newObj = new INDUSTRYMASTER();
           newObj['NAME'] = ele.NAME;
-          await queryRunner.manager.save(INDUSTRYMASTER, newObj);
+          //await queryRunner.manager.save(INDUSTRYMASTER, newObj);
+          await industrymasterRepo.save(newObj);
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('INDUSTRYMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //INSUARANCEMASTER
   async INSUARANCEMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM INSUARANCEMASTER order by CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM INSUARANCEMASTER order by CODE');
       let data = await this.jsonConverter(result);
-      let pgData = await this.INSUARANCEMASTERService.find()
+      const insuarancemasterRepo = this.dataSourcePg.getRepository(INSUARANCEMASTER);
+      let pgData = await insuarancemasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
         }
         else {
           let newObj = new INSUARANCEMASTER();
           newObj['NAME'] = ele.NAME.replace("\x00", "");
-          await queryRunner.manager.save(INSUARANCEMASTER, newObj);
+          //await queryRunner.manager.save(INSUARANCEMASTER, newObj);
+          await insuarancemasterRepo.save(newObj);
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('INSUARANCEMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //INTCATEGORYMASTER
   async INTCATEGORYMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM INTCATEGORYMASTER WHERE CODE > 11 order by CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM INTCATEGORYMASTER WHERE CODE > 11 order by CODE');
       let data = await this.jsonConverter(result);
-      let pgData = await this.INTCATEGORYMASTERService.find()
+      const intcategorymasterRepo = this.dataSourcePg.getRepository(INTCATEGORYMASTER);
+      let pgData = await intcategorymasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
         }
         else {
           let newObj = new INTCATEGORYMASTER();
           newObj['NAME'] = ele.NAME.replace("\x00", "");
-          await queryRunner.manager.save(INTCATEGORYMASTER, newObj);
+          //await queryRunner.manager.save(INTCATEGORYMASTER, newObj);
+          await intcategorymasterRepo.save(newObj);
         }
       }
-      await connection2.close()
+      //await connection2.close()
       console.log('INTCATEGORYMASTER')
-      await queryRunner.commitTransaction();
-      console.log('INTCATEGORYMASTER')
+      //await queryRunner.commitTransaction();
+      //console.log('INTCATEGORYMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //ITEMMASTER
   async ITEMMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM ITEMMASTER order by ITEM_CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM ITEMMASTER order by ITEM_CODE');
       let data = await this.jsonConverter(result);
       let pgData = await this.ITEMMASTERService.find()
-      let itemcategory = await connection2.execute('SELECT CODE FROM ITEMCATEGORY');
+      let itemcategory = await this.connectionByOracle.execute('SELECT CODE FROM ITEMCATEGORY');
       let itemcategorydata = await this.jsonConverter(itemcategory);
-      let postItemcategory = await this.ITEMCATEGORYMASTERService.find()
+      const itemmasterRepo = this.dataSourcePg.getRepository(ITEMMASTER);
+      let postItemcategory = await itemmasterRepo.find()
       let marathiName
       let marathiName1
       let font = 'DVBW-TTYogeshEn'
@@ -2804,7 +2862,8 @@ export class MigrateService {
           newObj['BRANCH_CODE'] = this.BRANCH_CODE;
           newObj['SYSCHNG_LOGIN'] = ele.OFFICER_CODE
           console.log('CODE:', ele.ITEM_CODE)
-          await queryRunner.manager.save(ITEMMASTER, newObj);
+          //await queryRunner.manager.save(ITEMMASTER, newObj);
+          await itemmasterRepo.save(newObj);
         }
       }
       else {
@@ -2838,33 +2897,35 @@ export class MigrateService {
             newObj['PURCHASE_QUANTITY'] = ele.PURCHASE_QUANTITY;
             newObj['LAST_UNLOCK_DATE'] = ele.LAST_UNLOCK_DATE == null ? null : moment(ele.LAST_UNLOCK_DATE).format('DD/MM/YYYY');
             newObj['BRANCH_CODE'] = this.BRANCH_CODE;
-            await queryRunner.manager.save(ITEMMASTER, newObj);
+            //await queryRunner.manager.save(ITEMMASTER, newObj);
+            await itemmasterRepo.save(newObj);
           }
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('ITEMMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //LOANSTAGEMASTER
   async LOANSTAGEMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from LOANSTAGEMASTER');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from LOANSTAGEMASTER');
       let data = await this.jsonConverter(result);
-      let pgData = await this.LOANSTAGEMASTERService.find()
+      const loanstagemasterRepo = this.dataSourcePg.getRepository(LOANSTAGEMASTER);
+      let pgData = await loanstagemasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
 
@@ -2872,32 +2933,34 @@ export class MigrateService {
         else {
           let newObj = new LOANSTAGEMASTER();
           newObj['NAME'] = ele.NAME;
-          await queryRunner.manager.save(LOANSTAGEMASTER, newObj);
+          //await queryRunner.manager.save(LOANSTAGEMASTER, newObj);
+          await loanstagemasterRepo.save(newObj);
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('LOANSTAGEMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //NARRATIONMASTER
   async NARRATIONMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from NARRATIONMASTER');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from NARRATIONMASTER');
       let data = await this.jsonConverter(result);
-      let pgData = await this.NARRATIONMASTERService.find()
+      const narrationmasterRepo = this.dataSourcePg.getRepository(NARRATIONMASTER);
+      let pgData = await narrationmasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NARRATION'] == ele.NARRATION)) {
 
@@ -2905,32 +2968,35 @@ export class MigrateService {
         else {
           let newObj = new NARRATIONMASTER();
           newObj['NARRATION'] = ele.NARRATION.replace("\x00", "");
-          await queryRunner.manager.save(NARRATIONMASTER, newObj);
+          //await queryRunner.manager.save(NARRATIONMASTER, newObj);
+          await narrationmasterRepo.save(newObj);
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('NARRATIONMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
-  //OCCUPATIONMASTER
+ // OCCUPATIONMASTER
   async OCCUPATIONMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM OCCUPATIONMASTER order by "CODE"');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM OCCUPATIONMASTER order by "CODE"');
+
+      const occupationmasterRepo = this.dataSourcePg.getRepository(OCCUPATIONMASTER);
       let data = await this.jsonConverter(result);
-      let pgData = await this.OCCUPATIONMASTERService.find()
+      let pgData = await occupationmasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
 
@@ -2939,32 +3005,34 @@ export class MigrateService {
           let newObj = new OCCUPATIONMASTER();
           newObj['CODE'] = ele.CODE;
           newObj['NAME'] = ele.NAME.replace("\x00", "");
-          await queryRunner.manager.save(OCCUPATIONMASTER, newObj);
+          await occupationmasterRepo.save(newObj);
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      //await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('OCCUPATIONMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+     // await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+     // await queryRunner.release();
     }
   }
 
   //OPERATIONMASTER
   async OPERATIONMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM OPERATIONMASTER order by CODE ');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM OPERATIONMASTER order by CODE ');
+      const operationmasterRepo = this.dataSourcePg.getRepository(OPERATIONMASTER);
+
       let data = await this.jsonConverter(result);
-      let pgData = await this.OPERATIONMASTERService.find()
+      let pgData = await operationmasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
 
@@ -2973,32 +3041,35 @@ export class MigrateService {
           let newObj = new OPERATIONMASTER();
           newObj['CODE'] = ele.CODE;
           newObj['NAME'] = ele.NAME.replace("\x00", "");
-          await queryRunner.manager.save(OPERATIONMASTER, newObj);
+          //await queryRunner.manager.save(OPERATIONMASTER, newObj);
+          await operationmasterRepo.save(newObj);
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      //await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('OPERATIONMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //OWNBRANCHMASTER
   async OWNBRANCHMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from OWNBRANCHMASTER');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from OWNBRANCHMASTER');
       let data = await this.jsonConverter(result);
 
+      const ownbranchmasterRepo = this.dataSourcePg.getRepository(OWNBRANCHMASTER);
+      let pgData = await ownbranchmasterRepo.find()
       for (let ele of data) {
         if (this.PostBranch.some(pgData => pgData['NAME'] == ele.NAME)) {
 
@@ -3024,32 +3095,34 @@ export class MigrateService {
           newObj['CODE'] = branchCode;
           newObj['sysparaId'] = this.PostSyspara[0].id;
           newObj['AC_NO'] = ele.AC_NO == 0 ? null : ele.AC_NO;
-          await queryRunner.manager.save(OWNBRANCHMASTER, newObj);
+          //await queryRunner.manager.save(OWNBRANCHMASTER, newObj);
+          await ownbranchmasterRepo.save(newObj);
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      //await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('OWNBRANCHMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //PRIORITYMASTER
   async PRIORITYMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from PRIORITYMASTER');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from PRIORITYMASTER');
       let data = await this.jsonConverter(result);
-      let pgData = await this.PRIORITYMASTERService.find()
+      const prioritymasterRepo = this.dataSourcePg.getRepository(PRIORITYMASTER);
+      let pgData = await prioritymasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
 
@@ -3061,32 +3134,34 @@ export class MigrateService {
           newObj['SUB1_CODE'] = ele.SUB1_CODE;
           newObj['SUB2_CODE'] = ele.SUB2_CODE;
           newObj['SUB3_CODE'] = ele.SUB3_CODE;
-          await queryRunner.manager.save(PRIORITYMASTER, newObj);
+          //await queryRunner.manager.save(PRIORITYMASTER, newObj);
+          await prioritymasterRepo.save(newObj);
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      //await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('PRIORITYMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //PURPOSEMASTER
   async PURPOSEMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM PURPOSEMASTER order by CODE ');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM PURPOSEMASTER order by CODE ');
+      const purposemasterRepo = this.dataSourcePg.getRepository(PURPOSEMASTER);
       let data = await this.jsonConverter(result);
-      let pgData = await this.PURPOSEMASTERService.find()
+      let pgData = await purposemasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
 
@@ -3094,32 +3169,34 @@ export class MigrateService {
         else {
           let newObj = new PURPOSEMASTER();
           newObj['NAME'] = ele.NAME;
-          await queryRunner.manager.save(PURPOSEMASTER, newObj);
+          //await queryRunner.manager.save(PURPOSEMASTER, newObj);
+          await purposemasterRepo.save(newObj);
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      //await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('PURPOSEMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //REPORTTYPEMASTER
   async REPORTTYPEMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM REPORTTYPEMASTER order by SERIAL_NO');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM REPORTTYPEMASTER order by SERIAL_NO');
+      const reporttypemasterRepo = this.dataSourcePg.getRepository(REPORTTYPEMASTER);
       let data = await this.jsonConverter(result);
-      let pgData = await this.REPORTTYPEMASTERService.find()
+      let pgData = await reporttypemasterRepo.find()
       for (let ele of data) {
         if (pgData.some(pgData => pgData['NAME'] == ele.NAME)) {
 
@@ -3127,60 +3204,65 @@ export class MigrateService {
         else {
           let newObj = new REPORTTYPEMASTER();
           newObj['NAME'] = ele.NAME.replace("\x00", "");
-          await queryRunner.manager.save(REPORTTYPEMASTER, newObj);
+          //await queryRunner.manager.save(REPORTTYPEMASTER, newObj);
+          await reporttypemasterRepo.save(newObj);
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      //await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('REPORTTYPEMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //HOLIDAYSMASTER
   async HOLIDAYSMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from holidaysmaster order by T_DATE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from holidaysmaster order by T_DATE');
+      const holidaysmasterRepo = this.dataSourcePg.getRepository(HOLIDAYSMASTER);
       let data = await this.jsonConverter(result);
       for (let ele of data) {
         let newObj = new HOLIDAYSMASTER();
         newObj['T_DATE'] = ele.T_DATE == '' || ele.T_DATE == null ? null : moment(ele.T_DATE).format('DD/MM/YYYY');
         newObj['T_DESC'] = ele.T_DESC.replace("\x00", "");
         newObj['BRANCH_CODE'] = this.BRANCH_CODE;
-        await queryRunner.manager.save(HOLIDAYSMASTER, newObj);
+        //await queryRunner.manager.save(HOLIDAYSMASTER, newObj);
+        await holidaysmasterRepo.save(newObj);
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('HOLIDAYSMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //TRANINPUTHEAD
   async TRANINPUTHEAD() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from TRANINPUTHEAD');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from TRANINPUTHEAD');
       let data = await this.jsonConverter(result);
+      const traninputheadRepo = this.dataSourcePg.getRepository(TRANINPUTHEAD);
+
       for (let ele of data) {
         let newObj = new TRANINPUTHEAD();
         newObj['SERIAL_NO'] = ele.SERIAL_NO;
@@ -3199,30 +3281,32 @@ export class MigrateService {
         newObj['HEAD_TYPE'] = ele.HEAD_TYPE;
         newObj['IS_NOTING_REQUIRED'] = ele.IS_NOTING_REQUIRED == 0 ? '0' : '1';
         newObj['IS_GLBAL_MAINTAIN'] = ele.IS_GLBAL_MAINTAIN == 0 ? '0' : '1';
-        await queryRunner.manager.insert(TRANINPUTHEAD, newObj);
+        //await queryRunner.manager.insert(TRANINPUTHEAD, newObj);
+        await traninputheadRepo.save(newObj)
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('TRANINPUTHEAD')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //PGCOMMISSIONMASTER
   async PGCOMMISSIONMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM PGCOMMISSIONMASTER order by effect_date');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM PGCOMMISSIONMASTER order by effect_date');
       let data = await this.jsonConverter(result);
+      const pgcommissionmasterRepo = this.dataSourcePg.getRepository(PGCOMMISSIONMASTER);
       for (let ele of data) {
         let newObj = new PGCOMMISSIONMASTER();
         newObj['SR_NO'] = ele.SR_NO;
@@ -3238,32 +3322,34 @@ export class MigrateService {
         newObj['PG_AC_ACNOTYPE'] = null;
         newObj['PG_AC_TYPE'] = null;
         newObj['PIGMY_SVR_CHARGE_RATE'] = ele.PIGMY_SVR_CHARGE_RATE;
-        await queryRunner.manager.save(PGCOMMISSIONMASTER, newObj);
+        //await queryRunner.manager.save(PGCOMMISSIONMASTER, newObj);
+        await pgcommissionmasterRepo.save(newObj);
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('PGCOMMISSIONMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   //security details forms
   //STOCKSTATEMENT
   async STOCKSTATEMENT() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT STOCKSTATEMENT.*,schemast.S_APPL as actype  FROM STOCKSTATEMENT left join schemast on STOCKSTATEMENT.ac_type=schemast.s_appl');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT STOCKSTATEMENT.*,schemast.S_APPL as actype  FROM STOCKSTATEMENT left join schemast on STOCKSTATEMENT.ac_type=schemast.s_appl');
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_CODE from securitymaster`)
-      let secutityPGData = await this.SECURITYMASTERService.find()
+      let securiy = await this.connectionByOracle.execute(`select SECU_CODE from securitymaster`)
+      const stockstatementRepo = this.dataSourcePg.getRepository(STOCKSTATEMENT);
+      let secutityPGData = await stockstatementRepo.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
         let schemastData = this.PostSchemast.filter(ele1 => ele1['AC_TYPE'] == ele.ACTYPE);
@@ -3293,32 +3379,34 @@ export class MigrateService {
           obj['FINISHED_MARGIN'] = ele.FINISHED_MARGIN
           obj['REMARK'] = ele.REMARK
           obj['SECURITY_TYPE'] = ele.SECURITY_TYPE
-          let insertObj = await queryRunner.manager.insert(STOCKSTATEMENT, obj)
+          //let insertObj = await queryRunner.manager.insert(STOCKSTATEMENT, obj)
+          let insertObj = await stockstatementRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('STOCKSTATEMENT')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //VEHICLE
   async VEHICLE() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select  VEHICLE.*,schemast.S_APPL as actype from VEHICLE left join schemast on VEHICLE.ac_type=schemast.s_appl');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select  VEHICLE.*,schemast.S_APPL as actype from VEHICLE left join schemast on VEHICLE.ac_type=schemast.s_appl');
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_CODE from securitymaster`)
+      const vehicleRepo = this.dataSourcePg.getRepository(VEHICLE);
+      let securiy = await this.connectionByOracle.execute(`select SECU_CODE from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -3357,32 +3445,34 @@ export class MigrateService {
           obj['PURCHASE_PRICE'] = ele.PURCHASE_PRICE
           obj['REF_ID'] = ele.REF_ID
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(VEHICLE, obj)
+          //let insertObj = await queryRunner.manager.insert(VEHICLE, obj)
+          let insertObj = await vehicleRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('vehicle')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //PLEDGESTOCK
   async PLEDGESTOCK() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select  PLEDGESTOCK.*,schemast.typeid as actype from PLEDGESTOCK left join schemast on PLEDGESTOCK.ac_type=schemast.s_appl');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select  PLEDGESTOCK.*,schemast.typeid as actype from PLEDGESTOCK left join schemast on PLEDGESTOCK.ac_type=schemast.s_appl');
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const pledgestockRepo = this.dataSourcePg.getRepository(PLEDGESTOCK);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -3418,32 +3508,34 @@ export class MigrateService {
           obj['RATE'] = ele.RATE
           obj['VALUE'] = ele.VALUE
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(PLEDGESTOCK, obj)
+          //let insertObj = await queryRunner.manager.insert(PLEDGESTOCK, obj)
+          let insertObj = await pledgestockRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('pledestock')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //PLANTMACHINARY
   async PLANTMACHINARY() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select  PLANTMACHINARY.*,schemast.S_APPL as actype from PLANTMACHINARY left join schemast on PLANTMACHINARY.ac_type=schemast.s_appl');
+      // let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select  PLANTMACHINARY.*,schemast.S_APPL as actype from PLANTMACHINARY left join schemast on PLANTMACHINARY.ac_type=schemast.s_appl');
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const plantmachinaryRepo = this.dataSourcePg.getRepository(PLANTMACHINARY);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -3479,32 +3571,34 @@ export class MigrateService {
           obj['REMARK'] = ele.REMARK
           obj['SECURITY_TYPE'] = ele.SECURITY_TYPE
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(PLANTMACHINARY, obj)
+          //let insertObj = await queryRunner.manager.insert(PLANTMACHINARY, obj)
+          let insertObj = await plantmachinaryRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('plantmachinary')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //OWNDEPOSIT
   async OWNDEPOSIT() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select  OWNDEPOSIT.*,schemast.s_appl  from OWNDEPOSIT left join schemast on OWNDEPOSIT.ac_type=schemast.s_appl');
+      // let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select  OWNDEPOSIT.*,schemast.s_appl  from OWNDEPOSIT left join schemast on OWNDEPOSIT.ac_type=schemast.s_appl');
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select * from securitymaster`)
+      const owndepositRepo = this.dataSourcePg.getRepository(OWNDEPOSIT);
+      let securiy = await this.connectionByOracle.execute(`select * from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -3556,32 +3650,34 @@ export class MigrateService {
           obj['IS_LIEN_MARK_CLEAR'] = ele.IS_LIEN_MARK_CLEAR
           obj['BALANCE_OF_LOAN_ACCOUNT'] = ele.BALANCE_OF_LOAN_ACCOUNT
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(OWNDEPOSIT, obj)
+          //let insertObj = await queryRunner.manager.insert(OWNDEPOSIT, obj)
+          let insertObj = await owndepositRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('owndeposit')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //OTHERSECURITY
   async OTHERSECURITY() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select  OTHERSECURITY.*,schemast.S_APPL as actype from OTHERSECURITY left join schemast on OTHERSECURITY.ac_type=schemast.s_appl');
+      // let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select  OTHERSECURITY.*,schemast.S_APPL as actype from OTHERSECURITY left join schemast on OTHERSECURITY.ac_type=schemast.s_appl');
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_CODE from securitymaster`)
+      const othersecurityRepo = this.dataSourcePg.getRepository(OTHERSECURITY);
+      let securiy = await this.connectionByOracle.execute(`select SECU_CODE from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -3614,32 +3710,34 @@ export class MigrateService {
           obj['DETAILS'] = ele.DETAILS
           obj['REF_ID'] = ele.REF_ID
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(OTHERSECURITY, obj)
+          //let insertObj = await queryRunner.manager.insert(OTHERSECURITY, obj)
+          let insertObj = await othersecurityRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('othersecurity')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //MARKETSHARE
   async MARKETSHARE() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select  MARKETSHARE.*,schemast.typeid as actype from MARKETSHARE left join schemast on MARKETSHARE.ac_type=schemast.s_appl');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select  MARKETSHARE.*,schemast.typeid as actype from MARKETSHARE left join schemast on MARKETSHARE.ac_type=schemast.s_appl');
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const marketshareRepo = this.dataSourcePg.getRepository(MARKETSHARE);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -3673,32 +3771,34 @@ export class MigrateService {
           obj['UPDATED_BY'] = ele.UPDATED_BY
           obj['RELEASE_BY'] = ele.RELEASE_BY
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(MARKETSHARE, obj)
+          //let insertObj = await queryRunner.manager.insert(MARKETSHARE, obj)
+          let insertObj = await marketshareRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('marketshare')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //LANDBUILDING
   async LANDBUILDING() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select  LANDBUILDING.*,schemast.S_APPL as actype from LANDBUILDING left join schemast on LANDBUILDING.ac_type=schemast.s_appl');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select  LANDBUILDING.*,schemast.S_APPL as actype from LANDBUILDING left join schemast on LANDBUILDING.ac_type=schemast.s_appl');
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_CODE from securitymaster`)
+      const landbuildingRepo = this.dataSourcePg.getRepository(LANDBUILDING);
+      let securiy = await this.connectionByOracle.execute(`select SECU_CODE from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -3738,32 +3838,34 @@ export class MigrateService {
           obj['REG_NO'] = ele.REG_NO?.replace("\x00", "")
           obj['BRANCH_CODE'] = this.BRANCH_CODE
           // obj['REF_ID'] = ele.REF_ID
-          let insertObj = await queryRunner.manager.insert(LANDBUILDING, obj)
+          //let insertObj = await queryRunner.manager.insert(LANDBUILDING, obj)
+          let insertObj = await landbuildingRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('landbuilding')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //GOLDSILVER
   async GOLDSILVER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select  GOLDSILVER.*,schemast.s_appl as actype from GOLDSILVER left join schemast on GOLDSILVER.ac_type=schemast.s_appl');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select  GOLDSILVER.*,schemast.s_appl as actype from GOLDSILVER left join schemast on GOLDSILVER.ac_type=schemast.s_appl');
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select * from securitymaster`)
+      const goldsilverRepo = this.dataSourcePg.getRepository(GOLDSILVER);
+      let securiy = await this.connectionByOracle.execute(`select * from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -3807,32 +3909,34 @@ export class MigrateService {
           obj['OFFICER_CODE'] = ele.OFFICER_CODE
           obj['ORA_ACNO'] = ele.AC_NO
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(GOLDSILVER, obj)
+          //let insertObj = await queryRunner.manager.insert(GOLDSILVER, obj)
+          let insertObj = await goldsilverRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('goldsilver')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //FURNITURE
   async FURNITURE() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select  FURNITURE.*,schemast.typeid as actype from FURNITURE left join schemast on FURNITURE.ac_type=schemast.s_appl');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select  FURNITURE.*,schemast.typeid as actype from FURNITURE left join schemast on FURNITURE.ac_type=schemast.s_appl');
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const furnitureRepo = this.dataSourcePg.getRepository(FURNITURE);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -3867,32 +3971,34 @@ export class MigrateService {
           obj['REMARK'] = ele.REMARK
           obj['SECURITY_TYPE'] = ele.SECURITY_TYPE
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(FURNITURE, obj)
+          //let insertObj = await queryRunner.manager.insert(FURNITURE, obj)
+          let insertObj = await furnitureRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('furniture')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //FIREPOLICY
   async FIREPOLICY() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select  FIREPOLICY.*,schemast.s_appl as actype from FIREPOLICY left join schemast on FIREPOLICY.ac_type=schemast.s_appl');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select  FIREPOLICY.*,schemast.s_appl as actype from FIREPOLICY left join schemast on FIREPOLICY.ac_type=schemast.s_appl');
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const firepolicyRepo = this.dataSourcePg.getRepository(FIREPOLICY);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -3926,31 +4032,33 @@ export class MigrateService {
           obj['CITY'] = ele.CITY
           obj['BRANCH_CODE'] = this.BRANCH_CODE
           obj['SECU_CODE'] = secuCode?.id
-          let insertObj = await queryRunner.manager.insert(FIREPOLICY, obj)
+          //let insertObj = await queryRunner.manager.insert(FIREPOLICY, obj)
+          let insertObj = await firepolicyRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('firepolicy')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   async SECINSURANCE() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select  SECINSURANCE.*,schemast.S_APPL as actype from SECINSURANCE left join schemast on SECINSURANCE.ac_type=schemast.s_appl');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select  SECINSURANCE.*,schemast.S_APPL as actype from SECINSURANCE left join schemast on SECINSURANCE.ac_type=schemast.s_appl');
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_CODE from securitymaster`)
+      const secinsuranceRepo = this.dataSourcePg.getRepository(SECINSURANCE);
+      let securiy = await this.connectionByOracle.execute(`select SECU_CODE from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -3981,32 +4089,34 @@ export class MigrateService {
           obj['INSU_AMOUNT'] = ele.INSU_AMOUNT
           obj['BRANCH_CODE'] = this.BRANCH_CODE
           obj['SECU_CODE'] = ele.SECU_CODE
-          let insertObj = await queryRunner.manager.insert(SECINSURANCE, obj)
+          //let insertObj = await queryRunner.manager.insert(SECINSURANCE, obj)
+          let insertObj = await secinsuranceRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('secinsurance')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //GOVTSECULIC
   async GOVTSECULIC() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select  GOVTSECULIC.*,schemast.S_APPL as actype from GOVTSECULIC left join schemast on GOVTSECULIC.ac_type=schemast.s_appl');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select  GOVTSECULIC.*,schemast.S_APPL as actype from GOVTSECULIC left join schemast on GOVTSECULIC.ac_type=schemast.s_appl');
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const govtseculicRepo = this.dataSourcePg.getRepository(GOVTSECULIC);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -4044,32 +4154,34 @@ export class MigrateService {
           obj['SURRENDER_VALUE'] = ele.SURRENDER_VALUE
           obj['NOMINEE'] = ele.RECOVERY
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(GOVTSECULIC, obj)
+          //let insertObj = await queryRunner.manager.insert(GOVTSECULIC, obj)
+          let insertObj = await govtseculicRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('govtseculic')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //BOOKDEBTS
   async BOOKDEBTS() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select  BOOKDEBTS.*,schemast.typeid as actype from BOOKDEBTS left join schemast on bookdebts.ac_type=schemast.s_appl');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select  BOOKDEBTS.*,schemast.typeid as actype from BOOKDEBTS left join schemast on bookdebts.ac_type=schemast.s_appl');
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const bookdebtsRepo = this.dataSourcePg.getRepository(BOOKDEBTS);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -4106,25 +4218,26 @@ export class MigrateService {
           obj['SECURITY_TYPE'] = ele.SECURITY_TYPE
           obj['AC_TYPE'] = ele.ACTYPE
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(BOOKDEBTS, obj)
+          //let insertObj = await queryRunner.manager.insert(BOOKDEBTS, obj)
+          let insertObj = await bookdebtsRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('bookdebts')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   async lengthCheck() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from idmaster where rownum <6 `);
+    // let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from idmaster where rownum <6 `);
     let data = await this.jsonConverter(result);
     for (let ele of data) {
       let newObj = {}
@@ -4136,8 +4249,8 @@ export class MigrateService {
   }
   //IDMASTER
   async IDMASTERCORRECTION() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from (
+   // let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from (
       select rownum offset, rs.* from (
         SELECT IDMASTER.*, OCCUPATIONMASTER.CODE AS OCCUPATION, CASTMASTER.CODE AS CASTMASTER ,RISKCATEGORYMASTER.CODE
         AS RISKCATEGORYMASTER FROM IDMASTER LEFT JOIN OCCUPATIONMASTER ON IDMASTER.AC_OCODE=OCCUPATIONMASTER.CODE
@@ -4148,16 +4261,16 @@ export class MigrateService {
       and offset > ${this.offset}`);
     let data = await this.jsonConverter(result);
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from NOTFOUNDIDMASTER`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from NOTFOUNDIDMASTER`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    //await connection2.close()
     this.count = result1[0].COUNT;
     await this.IDMASTERWITHLIMIT(data);
   }
   //IDMASTER
   async IDMASTER() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from (
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from (
       select rownum offset, rs.* from (
         SELECT IDMASTER.*, OCCUPATIONMASTER.CODE AS OCCUPATION, CASTMASTER.CODE AS CASTMASTER ,RISKCATEGORYMASTER.CODE AS RISKCATEGORYMASTER FROM IDMASTER LEFT JOIN OCCUPATIONMASTER ON IDMASTER.AC_OCODE=OCCUPATIONMASTER.CODE LEFT JOIN CASTMASTER ON IDMASTER.AC_CAST= CASTMASTER.CODE LEFT JOIN RISKCATEGORYMASTER ON IDMASTER.AC_RISKCATG = RISKCATEGORYMASTER.CODE
         ORDER BY IDMASTER.AC_NO
@@ -4166,9 +4279,9 @@ export class MigrateService {
       and offset > ${this.offset}`);
     let data = await this.jsonConverter(result);
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from IDMASTER where AC_NO > 2508`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from IDMASTER where AC_NO > 2508`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    //await connection2.close()
     this.count = result1[0].COUNT;
     await this.IDMASTERWITHLIMIT(data);
   }
@@ -4179,7 +4292,7 @@ export class MigrateService {
     await queryRunner.startTransaction();
     try {
       // let connection = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString1 });
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       // let idmas = await connection.execute(`select * from idmas`)
       // let marathiidmas = await this.jsonConverter(idmas);
       // await connection.close()
@@ -4190,6 +4303,8 @@ export class MigrateService {
       let marathiName;
       let ENG_NAME;
       let previousACNO = 0;
+
+      const idmasterRepo = this.dataSourcePg.getRepository(IDMASTER);
 
       for (let ele of data) {
         let newObj = new IDMASTER();
@@ -4248,7 +4363,7 @@ export class MigrateService {
 
         let occpID = null
         if (ele.OCCUPATION != null) {
-          let occupation = await connection2.execute(`select CODE from OCCUPATIONMASTER where CODE=${ele.OCCUPATION}`)
+          let occupation = await this.connectionByOracle.execute(`select CODE from OCCUPATIONMASTER where CODE=${ele.OCCUPATION}`)
           let occData = await this.jsonConverter(occupation);
           for (let eleme of occData) {
             occpID = (occupationData.find(occupationData => occupationData['CODE'] == eleme.CODE))
@@ -4256,7 +4371,7 @@ export class MigrateService {
         }
         let castID = null
         if (ele.CASTMASTER != null) {
-          let CASTdATA = await connection2.execute(`select CODE from CASTMASTER where CODE=${ele.CASTMASTER}`)
+          let CASTdATA = await this.connectionByOracle.execute(`select CODE from CASTMASTER where CODE=${ele.CASTMASTER}`)
           let occData = await this.jsonConverter(CASTdATA);
           for (let eleme of occData) {
             castID = (castData.find(castData => castData['CODE'] == eleme.CODE))
@@ -4264,7 +4379,7 @@ export class MigrateService {
         }
         let RISKID = null
         if (ele.RISKCATEGORYMASTER != null) {
-          let CASTdATA = await connection2.execute(`select NAME from RISKCATEGORYMASTER where CODE=${ele.RISKCATEGORYMASTER}`)
+          let CASTdATA = await this.connectionByOracle.execute(`select NAME from RISKCATEGORYMASTER where CODE=${ele.RISKCATEGORYMASTER}`)
           let occData = await this.jsonConverter(CASTdATA);
           for (let eleme of occData) {
             RISKID = (riskCategoryData.find(riskCategoryData => riskCategoryData['CODE'] == eleme.CODE))
@@ -4272,7 +4387,7 @@ export class MigrateService {
         }
         let mem_TYPE = null
         if (ele.AC_MEMBTYPE != null) {
-          let memTYPE = await connection2.execute(`select S_APPL from schemast where S_APPL=${ele.AC_MEMBTYPE}`)
+          let memTYPE = await this.connectionByOracle.execute(`select S_APPL from schemast where S_APPL=${ele.AC_MEMBTYPE}`)
           mem_TYPE = await this.jsonConverter(memTYPE);
         }
         let AC_MEMBNO = ele.AC_MEMBNO == 0 ? null : Number(ele.AC_MEMBNO) + 100000
@@ -4374,7 +4489,8 @@ export class MigrateService {
         newObj['F_NAME_REG'] = namearr1 == null ? null : namearr1[1]
         newObj['M_NAME_REG'] = namearr1 == null ? null : namearr1[2]
         // newObj['AC_ADD_REG'] = marathiName;
-        let idmasterData = await queryRunner.manager.save(IDMASTER, newObj);
+        // let idmasterData = await queryRunner.manager.save(IDMASTER, newObj);
+        let idmasterData = await idmasterRepo.save(newObj);
 
 
         let AC_ADDR1 = ele.AC_ADDR1
@@ -4480,10 +4596,10 @@ export class MigrateService {
         //previousACNO = currentACNO;
         console.log('currentACNO:', ele.AC_NO)
       }
-      await connection2.close()
+      //await connection2.close()
       if (this.offset <= this.count && this.flag == 0) {
         this.offset = this.offset + 1000;
-        await queryRunner.commitTransaction();
+        //await queryRunner.commitTransaction();
         await this.IDMASTER()
       }
       else if (this.flag == 1) {
@@ -4494,30 +4610,31 @@ export class MigrateService {
       else if (this.flag == 0 && this.offset != 0) {
         this.offset = this.offset + 1000;
         this.flag = 1
-        await queryRunner.commitTransaction();
+        //await queryRunner.commitTransaction();
         await this.IDMASTER()
       }
 
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //IDMASTER - CUSTOMERADDRESS
   async CUSTOMERADDRESS() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from CUSTOMERADDRESS');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from CUSTOMERADDRESS');
 
       let data = await this.jsonConverter(result);
+      const customerAddressRepo = this.dataSourcePg.getRepository(CUSTOMERADDRESS);
       data.forEach(async ele => {
         let newObj = new CUSTOMERADDRESS();
         newObj['AC_HONO'] = ele.AC_HONO;
@@ -4531,35 +4648,37 @@ export class MigrateService {
         newObj['AC_ADDTYPE'] = ele.AC_ADDTYPE;
         newObj['AC_CTCODE'] = ele.AC_CTCODE;
 
-        await queryRunner.manager.save(CUSTOMERADDRESS, newObj);
+        //await queryRunner.manager.save(CUSTOMERADDRESS, newObj);
+        await customerAddressRepo.save(newObj);
       })
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('Completed CUSTOMERADDRESS')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //nomineelink
   async nomineelink(table, acnotype, ac_type, ac_no, id, BANKACNO) {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`SELECT nomineelink.AC_NNAME AS AC_NNAME,
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`SELECT nomineelink.AC_NNAME AS AC_NNAME,
         nomineelink .AC_NRELA as AC_NRELA, nomineelink.AC_NDATE as AC_NDATE, nomineelink.AGE as AGE,addr1 as AC_NADDR, nomineelink.addr2 as AC_NGALLI, nomineelink.addr3 as AC_NAREA,nomineelink.pin as AC_NPIN, nomineelink.ctcode as AC_CTCODE,
     nomineelink .ac_no,nomineelink .ac_type,nomineelink .REF_ID  FROM nomineelink  where nomineelink.ac_acnotype = '${acnotype}' and ac_type = ${ac_type} and ac_no = ${ac_no}  ORDER BY nomineelink.ac_no`)
 
       let data = await this.jsonConverter(result);
+      const nomineelinkRepo = this.dataSourcePg.getRepository(NOMINEELINK);
       for (let element of data) {
         //city find
-        let city = await connection2.execute(`select CITY_CODE from CITYMASTER where CITY_CODE=${element.AC_CTCODE}`)
+        let city = await this.connectionByOracle.execute(`select CITY_CODE from CITYMASTER where CITY_CODE=${element.AC_CTCODE}`)
         let CITYMASTER = await this.jsonConverter(city);
         let CITYID
         for (let eleme of CITYMASTER) {
@@ -4592,28 +4711,29 @@ export class MigrateService {
         else if (table == 'PGMASTER') {
           nominee['pigmyAID'] = id;
         }
-        let nom = await queryRunner.manager.insert(NOMINEELINK, nominee);
+        //let nom = await queryRunner.manager.insert(NOMINEELINK, nominee);
+        let nom = await nomineelinkRepo.save(nominee);
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //atteroney
   async atteroney(table, acnotype, ac_type, ac_no, id) {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`SELECT ATTERONEYLINK.ATTERONEY_NAME AS ATTERONEY_NAME,
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`SELECT ATTERONEYLINK.ATTERONEY_NAME AS ATTERONEY_NAME,
     ATTERONEYLINK.DATE_APPOINTED as DATE_APPOINTED,
     ATTERONEYLINK.DATE_EXPIRY as DATE_EXPIRY,
        ATTERONEYLINK.ac_no FROM ATTERONEYLINK 
@@ -4621,6 +4741,7 @@ export class MigrateService {
      ORDER BY ATTERONEYLINK.ac_no`)
 
       let data = await this.jsonConverter(result);
+      const atteroneylinkRepo = this.dataSourcePg.getRepository(ATTERONEYLINK);
       for (let element of data) {
         let attorney = new ATTERONEYLINK();
 
@@ -4637,33 +4758,35 @@ export class MigrateService {
           attorney['PGMasterID'] = id;
         }
         attorney['BRANCH_CODE'] = this.BRANCH_CODE
-        let nom = await queryRunner.manager.insert(ATTERONEYLINK, attorney);
+        //let nom = await queryRunner.manager.insert(ATTERONEYLINK, attorney);
+        let nom = await atteroneylinkRepo.save(attorney);
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //joint
   async jointAc(table, acnotype, ac_type, ac_no, id, BANKACNO) {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       // let result = await connection2.execute(`SELECT VWALLMASTER.ac_custid, idmaster.ac_name,VWALLMASTER.ac_no, VWALLMASTER.ac_type  FROM VWALLMASTER inner join idmaster on idmaster.ac_no=vwallmaster.ac_custid WHERE VWALLMASTER.ac_acnotype =
       // '${acnotype}' and VWALLMASTER.ac_type =  ${ac_type} and VWALLMASTER.ac_no =  ${ac_no}`)
 
-      let result = await connection2.execute(`SELECT * FROM JointAcLink  
+      let result = await this.connectionByOracle.execute(`SELECT * FROM JointAcLink  
         where JointAcLink.ac_acnotype = '${acnotype}' and ac_type =  ${ac_type} and ac_no =  ${ac_no}  ORDER BY JointAcLink.ac_no`)
       let data = await this.jsonConverter(result);
+      const jointAcLinkRepo = this.dataSourcePg.getRepository(JointAcLink);
       for (let element of data) {
         let joint = new JointAcLink();
         //  joint['REF_ID'] = element.REF_ID;
@@ -4686,31 +4809,33 @@ export class MigrateService {
         else if (table == 'PGMASTER') {
           joint['PGMasterID'] = id;
         }
-        await queryRunner.manager.insert(JointAcLink, joint);
+        //await queryRunner.manager.insert(JointAcLink, joint);
+        await jointAcLinkRepo.save(joint);
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      //await queryRunner.commitTransaction();
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //TDSFORMSUBMIT
   async TDSFORMSUBMIT() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from TDSFORMSUBMIT');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from TDSFORMSUBMIT');
       let data = await this.jsonConverter(result);
+      const tdsFormSubmitRepo = this.dataSourcePg.getRepository(TDSFORMSUBMIT);
       for (let ele of data) {
-        let custid = (this.Postidmaster.find(acmasterData => acmasterData['ORA_AC_NO'] == ele.AC_CUSTID && acmasterData['ORA_BRANCH'] == this.BRANCH_CODE))
+        let custid = tdsFormSubmitRepo.find(acmasterData => acmasterData['ORA_AC_NO'] == ele.AC_CUSTID && acmasterData['ORA_BRANCH'] == this.BRANCH_CODE)
         let newObj = new TDSFORMSUBMIT();
         newObj['FIN_YEAR'] = ele.FIN_YEAR
         newObj['SUBMIT_DATE'] = ele.SUBMIT_DATE == '' || ele.SUBMIT_DATE == null ? '' : moment(ele.SUBMIT_DATE).format('DD/MM/YYYY');
@@ -4719,34 +4844,36 @@ export class MigrateService {
         newObj['TDS_LIMIT'] = ele.TDS_LIMIT
         newObj['IS_EXEMPT_TDS'] = ele.IS_EXEMPT_TDS
         newObj['idmasterID'] = custid.id
-        await queryRunner.manager.save(TDSFORMSUBMIT, newObj);
+        //await queryRunner.manager.save(TDSFORMSUBMIT, newObj);
+        await tdsFormSubmitRepo.save(newObj);
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('TDSFORMSUBMIT')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
 
   async lnmasterread() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute('select * from LNMASTER where rownum<=1 ');
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute('select * from LNMASTER where rownum<=1 ');
     let data = await this.jsonConverter(result);
+    // const lnmasterRepo = this.dataSourcePg.getRepository(LNMASTER);
     data.forEach(async ele => {
-      let guaranterdetails = await connection2.execute(`SELECT GUARANTERDETAILS .*, schemast.typeid as ACTYPE,lnmaster.B_ACNO  from  GUARANTERDETAILS left join schemast on GUARANTERDETAILS.ac_type=schemast.s_appl LEFT JOIN LNMASTER ON GUARANTERDETAILS.AC_NO=LNMASTER.AC_NO where GUARANTERDETAILS.AC_ACNOTYPE = '${ele.AC_ACNOTYPE}' AND GUARANTERDETAILS.AC_TYPE = ${ele.AC_TYPE} AND GUARANTERDETAILS.AC_NO = ${ele.AC_NO}`)
+      let guaranterdetails = await this.connectionByOracle.execute(`SELECT GUARANTERDETAILS .*, schemast.typeid as ACTYPE,lnmaster.B_ACNO  from  GUARANTERDETAILS left join schemast on GUARANTERDETAILS.ac_type=schemast.s_appl LEFT JOIN LNMASTER ON GUARANTERDETAILS.AC_NO=LNMASTER.AC_NO where GUARANTERDETAILS.AC_ACNOTYPE = '${ele.AC_ACNOTYPE}' AND GUARANTERDETAILS.AC_TYPE = ${ele.AC_TYPE} AND GUARANTERDETAILS.AC_NO = ${ele.AC_NO}`)
       let guaranterdetail = await this.jsonConverter(guaranterdetails);
       console.log(guaranterdetail, 'guaran')
-      let securitydetails = await connection2.execute(`SELECT SECURITYDETAILS .*, schemast.typeid as ACTYPE,lnmaster.B_ACNO  from  SECURITYDETAILS left join schemast on securitydetails.ac_type=schemast.s_appl LEFT JOIN LNMASTER ON SECURITYDETAILS.AC_NO=LNMASTER.AC_NO where SECURITYDETAILS.AC_ACNOTYPE = '${ele.AC_ACNOTYPE}' AND SECURITYDETAILS.AC_TYPE = ${ele.AC_TYPE} AND SECURITYDETAILS.AC_NO = ${ele.AC_NO}`)
+      let securitydetails = await this.connectionByOracle.execute(`SELECT SECURITYDETAILS .*, schemast.typeid as ACTYPE,lnmaster.B_ACNO  from  SECURITYDETAILS left join schemast on securitydetails.ac_type=schemast.s_appl LEFT JOIN LNMASTER ON SECURITYDETAILS.AC_NO=LNMASTER.AC_NO where SECURITYDETAILS.AC_ACNOTYPE = '${ele.AC_ACNOTYPE}' AND SECURITYDETAILS.AC_TYPE = ${ele.AC_TYPE} AND SECURITYDETAILS.AC_NO = ${ele.AC_NO}`)
       let security = await this.jsonConverter(securitydetails);
       console.log(security, 'security')
-      let coborrowerDeatils = await connection2.execute(`SELECT COBORROWER .*, schemast.typeid as ACTYPE,lnmaster.B_ACNO  from  COBORROWER left join schemast on COBORROWER.ac_type=schemast.s_appl LEFT JOIN LNMASTER ON COBORROWER.AC_NO=LNMASTER.AC_NO where COBORROWER.AC_ACNOTYPE = '${ele.AC_ACNOTYPE}' AND COBORROWER.AC_TYPE = ${ele.AC_TYPE} AND COBORROWER.AC_NO = ${ele.AC_NO}`)
+      let coborrowerDeatils = await this.connectionByOracle.execute(`SELECT COBORROWER .*, schemast.typeid as ACTYPE,lnmaster.B_ACNO  from  COBORROWER left join schemast on COBORROWER.ac_type=schemast.s_appl LEFT JOIN LNMASTER ON COBORROWER.AC_NO=LNMASTER.AC_NO where COBORROWER.AC_ACNOTYPE = '${ele.AC_ACNOTYPE}' AND COBORROWER.AC_TYPE = ${ele.AC_TYPE} AND COBORROWER.AC_NO = ${ele.AC_NO}`)
       // SELECT COBORROWER.*, schemast.typeid as ACTYPE, lnmaster.B_ACNO  from  COBORROWER left join schemast on COBORROWER.ac_type = schemast.s_appl left JOIN LNMASTER ON COBORROWER.AC_NO = LNMASTER.AC_NO where COBORROWER.AC_ACNOTYPE = 'CC' AND COBORROWER.AC_TYPE = 80200 AND COBORROWER.AC_NO = 490002
       let coborrower = await this.jsonConverter(coborrowerDeatils);
       console.log(coborrower, 'coborrower')
@@ -4756,13 +4883,14 @@ export class MigrateService {
   //instruction
   //SPECIALINSTRUCTION
   async SPECIALINSTRUCTION() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select  SPECIALINSTRUCTION.*,schemast.S_APPL as actype from SPECIALINSTRUCTION left join schemast on SPECIALINSTRUCTION.tran_actype=schemast.s_appl order by instruction_date');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select  SPECIALINSTRUCTION.*,schemast.S_APPL as actype from SPECIALINSTRUCTION left join schemast on SPECIALINSTRUCTION.tran_actype=schemast.s_appl order by instruction_date');
       let data = await this.jsonConverter(result);
+      const specialInstructionRepo = this.dataSourcePg.getRepository(SPECIALINSTRUCTION);
       for (let ele of data) {
         if (ele.ACTYPE == null) {
           continue;
@@ -4791,29 +4919,31 @@ export class MigrateService {
         obj['TO_DATE'] = ele.TO_DATE == '' || ele.TO_DATE == null ? null : moment(ele.TO_DATE).format('DD/MM/YYYY');
         obj['IS_RESTRICT'] = ele.IS_RESTRICT == 0 ? '0' : '1'
         obj['REVOKE_DATE'] = ele.REVOKE_DATE == '' || ele.REVOKE_DATE == null ? null : moment(ele.REVOKE_DATE).format('DD/MM/YYYY');
-        await queryRunner.manager.save(SPECIALINSTRUCTION, obj);
+       // await queryRunner.manager.save(SPECIALINSTRUCTION, obj);
+       await specialInstructionRepo.save(obj);
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('SPECIALINSTRUCTION')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   //TODTRAN
   async TODTRAN() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select TODTRAN.*, SCHEMAST.S_APPL AS ACTYPE from TODTRAN LEFT JOIN SCHEMAST ON TODTRAN.AC_TYPE= SCHEMAST.S_APPL');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select TODTRAN.*, SCHEMAST.S_APPL AS ACTYPE from TODTRAN LEFT JOIN SCHEMAST ON TODTRAN.AC_TYPE= SCHEMAST.S_APPL');
       let data = await this.jsonConverter(result);
+      const todtranRepo = this.dataSourcePg.getRepository(TODTRAN);
       for (let ele of data) {
         if (ele.ACTYPE == null) {
           continue;
@@ -4842,38 +4972,40 @@ export class MigrateService {
           obj['AC_ODDAYS'] = ele.TOD_DAYS
           obj['AC_ODDATE'] = ele.TRAN_DATE == '' || ele.TRAN_DATE == null ? null : moment(ele.TRAN_DATE).format('DD/MM/YYYY');
         }
-        await queryRunner.manager.save(TODTRAN, obj);
+        // await queryRunner.manager.save(TODTRAN, obj);
+        await todtranRepo.save(obj);
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('TODTRAN')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   //STANDINSTRUCTION
   async STANDINSTRUCTION() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from STANDINSTRUCTION order by instruction_date');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from STANDINSTRUCTION order by instruction_date');
       let data = await this.jsonConverter(result);
+      const standInstructionRepo = this.dataSourcePg.getRepository(STANDINSTRUCTION);
       for (let ele of data) {
         let CR_ACTYPE = null
         if (ele.CR_ACTYPE != null) {
-          let memTYPE = await connection2.execute(`select S_APPL from schemast where S_APPL=${ele.CR_ACTYPE}`)
+          let memTYPE = await this.connectionByOracle.execute(`select S_APPL from schemast where S_APPL=${ele.CR_ACTYPE}`)
           CR_ACTYPE = await this.jsonConverter(memTYPE);
         }
         let DR_ACTYPE = null
         if (ele.DR_ACTYPE != null) {
-          let memTYPE = await connection2.execute(`select S_APPL from schemast where S_APPL=${ele.DR_ACTYPE}`)
+          let memTYPE = await this.connectionByOracle.execute(`select S_APPL from schemast where S_APPL=${ele.DR_ACTYPE}`)
           DR_ACTYPE = await this.jsonConverter(memTYPE);
         }
         let drschemastData = DR_ACTYPE != null ? await this.SCHEMASTService.find({
@@ -4926,38 +5058,40 @@ export class MigrateService {
         interestIns['IS_AUTO_CUT_LNPGCOM'] = ele.IS_AUTO_CUT_LNPGCOM
         interestIns['REVOKE_DATE'] = ele.REVOKE_DATE == '' || ele.REVOKE_DATE == null ? null : moment(ele.REVOKE_DATE).format('DD/MM/YYYY');
         interestIns['BRANCH_CODE'] = this.BRANCH_CODE
-        await queryRunner.manager.save(STANDINSTRUCTION, interestIns);
+        // await queryRunner.manager.save(STANDINSTRUCTION, interestIns);
+        await standInstructionRepo.save(interestIns);
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('STANDINSTRUCTION')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   //INTINSTRUCTION
   async INTINSTRUCTION() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from INTINSTRUCTION order by instruction_date');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from INTINSTRUCTION order by instruction_date');
       let data = await this.jsonConverter(result);
+      const intInstructionRepo = this.dataSourcePg.getRepository(INTINSTRUCTION);
       for (let ele of data) {
         let CR_ACTYPE = null
         if (ele.CR_ACTYPE != null) {
-          let memTYPE = await connection2.execute(`select * from schemast where S_APPL=${ele.CR_ACTYPE}`)
+          let memTYPE = await this.connectionByOracle.execute(`select * from schemast where S_APPL=${ele.CR_ACTYPE}`)
           CR_ACTYPE = await this.jsonConverter(memTYPE);
         }
         let DR_ACTYPE = null
         if (ele.DR_ACTYPE != null) {
-          let memTYPE = await connection2.execute(`select * from schemast where S_APPL=${ele.DR_ACTYPE}`)
+          let memTYPE = await this.connectionByOracle.execute(`select * from schemast where S_APPL=${ele.DR_ACTYPE}`)
           DR_ACTYPE = await this.jsonConverter(memTYPE);
         }
         let drschemastData = DR_ACTYPE != null ? await this.SCHEMASTService.find({
@@ -5009,18 +5143,19 @@ export class MigrateService {
         // interestIns['DEFAULT_INTEREST_APPLICABLE'] = ele.DEFAULT_INTEREST_APPLICABLE
         interestIns['REVOKE_DATE'] = ele.REVOKE_DATE == '' || ele.REVOKE_DATE == null ? null : moment(ele.REVOKE_DATE).format('DD/MM/YYYY');
         interestIns['BRANCH_CODE'] = this.BRANCH_CODE
-        await queryRunner.manager.save(INTINSTRUCTION, interestIns);
+        //await queryRunner.manager.save(INTINSTRUCTION, interestIns);
+        await intInstructionRepo.save(interestIns);
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('intinstruction')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
@@ -5028,21 +5163,22 @@ export class MigrateService {
   //interest rate for term deposit
   //INTRATETD grid table:TERMINTRATE
   async intrateTD() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       //let result = await connection2.execute(`select distinct intratetd.ACNOTYPE,intratetd.INT_CATEGORY,intratetd.EFFECT_DATE,intratetd.actype, schemast.typeid as ac_type  from INTRATETD left join schemast on intratetd.actype=schemast.s_appl order by intratetd.effect_date asc`)
-      let result = await connection2.execute(`select * from INTRATETD order by intratetd.effect_date asc`)
+      let result = await this.connectionByOracle.execute(`select * from INTRATETD order by intratetd.effect_date asc`)
       let data = await this.jsonConverter(result);
+      const intrateTDRepo = this.dataSourcePg.getRepository(INTRATETD);
 
-      let pgData = await this.intRateTDRepository.find()
+      let pgData = await intrateTDRepo.find()
       for (let ele of data) {
         if (pgData.some(date => moment(date['EFFECT_DATE'], 'DD/MM/YYYY').format('DD/MM/YYYY') == moment(ele.EFFECT_DATE, 'DD/MM/YYYY').format('DD/MM/YYYY'))) {
         }
         else {
-          let intCategory = await connection2.execute(`select NAME from INTCATEGORYMASTER where CODE=${ele.INT_CATEGORY}`)
+          let intCategory = await this.connectionByOracle.execute(`select NAME from INTCATEGORYMASTER where CODE=${ele.INT_CATEGORY}`)
           let int_category = await this.jsonConverter(intCategory);
           let int_cat
           int_category.forEach(eleme => {
@@ -5055,17 +5191,19 @@ export class MigrateService {
           InterestRate['INT_CATEGORY'] = ele.INT_CATEGORY
           InterestRate['TYPE'] = ele.ACNOTYPE
           InterestRate['EFFECT_DATE'] = effectDate;
-          let tdRate = await queryRunner.manager.save(INTRATETD, InterestRate);
+          //let tdRate = await queryRunner.manager.save(INTRATETD, InterestRate);
+          let tdRate = await intrateTDRepo.save(InterestRate);
           //GRID QUERY
           let result1
           if (ele.ACTYPE == null) {
-            result1 = await connection2.execute(`select * FROM INTRATETD WHERE ACNOTYPE='${ele.ACNOTYPE}' AND INT_CATEGORY=${ele.INT_CATEGORY} AND EFFECT_DATE=TO_DATE('${effectDate}','DD/MM/YYYY')`)
+            result1 = await this.connectionByOracle.execute(`select * FROM INTRATETD WHERE ACNOTYPE='${ele.ACNOTYPE}' AND INT_CATEGORY=${ele.INT_CATEGORY} AND EFFECT_DATE=TO_DATE('${effectDate}','DD/MM/YYYY')`)
           }
           else {
-            result1 = await connection2.execute(`select * FROM INTRATETD WHERE ACNOTYPE='${ele.ACNOTYPE}' AND INT_CATEGORY=${ele.INT_CATEGORY} AND EFFECT_DATE=TO_DATE('${effectDate}','DD/MM/YYYY')  AND ACTYPE=${ele.ACTYPE}`)
+            result1 = await this.connectionByOracle.execute(`select * FROM INTRATETD WHERE ACNOTYPE='${ele.ACNOTYPE}' AND INT_CATEGORY=${ele.INT_CATEGORY} AND EFFECT_DATE=TO_DATE('${effectDate}','DD/MM/YYYY')  AND ACTYPE=${ele.ACTYPE}`)
           }
           // select * FROM INTRATETD WHERE ACNOTYPE='TD' AND INT_CATEGORY=2 AND EFFECT_DATE=TO_DATE('01/10/2016','DD/MM/YYYY') AND ACTYPE=20100)
           let grid = await this.jsonConverter(result1);
+          const termintrateRepo = this.dataSourcePg.getRepository(TERMINTRATE);
           for (let element of grid) {
             let newRate = new TERMINTRATE();
             newRate['FROM_DAYS'] = element.FROM_DAYS;
@@ -5075,32 +5213,34 @@ export class MigrateService {
             newRate['INT_RATE'] = element.INT_RATE;
             newRate['PENAL_INT_RATE'] = element.PENAL_INT_RATE;
             newRate['idRateID'] = tdRate.id;
-            await queryRunner.manager.insert(TERMINTRATE, newRate);
+            //await queryRunner.manager.insert(TERMINTRATE, newRate);
+            await termintrateRepo.save(newRate);
           }
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('INTRATETD')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   //interest rate for deposit interest rate 
   //INTRATETDMULTI grid table:INTMULTI
   async INTRATETDMULTI() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select distinct INTRATETDMULTI.INT_CATEGORY,INTRATETDMULTI.ac_type, schemast.typeid as actype from INTRATETDMULTI left join schemast on INTRATETDMULTI.ac_type=schemast.s_appl`)
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select distinct INTRATETDMULTI.INT_CATEGORY,INTRATETDMULTI.ac_type, schemast.typeid as actype from INTRATETDMULTI left join schemast on INTRATETDMULTI.ac_type=schemast.s_appl`)
       let data = await this.jsonConverter(result);
+      const intratetdMultiRepo = this.dataSourcePg.getRepository(INTRATETDMULTI);
       let pgData = await this.intRateTDRepository.find()
       for (let ele of data) {
         if (pgData.some(date => date['ACNOTYPE'] == ele.ACNOTYPE && date['INT_CATEGORY'] == ele.INT_CATEGORY)) {
@@ -5109,9 +5249,10 @@ export class MigrateService {
           let InterestRate = new INTRATETDMULTI()
           InterestRate['ACNOTYPE'] = Number(ele.ACTYPE)
           InterestRate['INT_CATEGORY'] = Number(ele.INT_CATEGORY)
-          let tdRate = await queryRunner.manager.save(INTRATETDMULTI, InterestRate);
+          //let tdRate = await queryRunner.manager.save(INTRATETDMULTI, InterestRate);
+          let tdRate = await intratetdMultiRepo.save(InterestRate);
           //GRID QUERY
-          let result1 = await connection2.execute(`select * FROM INTRATETDMULTI WHERE ACNOTYPE='${ele.ACNOTYPE}' AND INT_CATEGORY=${ele.INT_CATEGORY} AND ACTYPE=${ele.ACTYPE}`)
+          let result1 = await this.connectionByOracle.execute(`select * FROM INTRATETDMULTI WHERE ACNOTYPE='${ele.ACNOTYPE}' AND INT_CATEGORY=${ele.INT_CATEGORY} AND ACTYPE=${ele.ACTYPE}`)
           // select * FROM INTRATETDMULTI WHERE ACNOTYPE='TD' AND INT_CATEGORY=1 AND ACTYPE=20100
           let grid = await this.jsonConverter(result1);
           for (let element of grid) {
@@ -5120,34 +5261,36 @@ export class MigrateService {
             newRate['EFFECT_DATE'] = effectDate;
             newRate['INT_RATE'] = element.INT_RATE;
             newRate['idRateID'] = tdRate.id;
-            await queryRunner.manager.insert(INTMULTI, newRate);
+            //await queryRunner.manager.insert(INTMULTI, newRate);
+            await intratetdMultiRepo.save(newRate);
           }
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('INTRATETDMULTI')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //DEPRICIATION RATE MASTER
   //DEPRCATEGORY
   async DEPRRATE() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    //let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from deprrate');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from deprrate');
       let data = await this.jsonConverter(result);
-      let pgData = await this.DEPRRATEService.find()
+      const deprrateRepo = this.dataSourcePg.getRepository(DEPRRATE);
+      let pgData = await deprrateRepo.find()
       for (let ele of data) {
         if (pgData.some(date => moment(date['EFFECT_DATE'], 'DD/MM/YYYY').format('DD/MM/YYYY') == moment(ele.EFFECT_DATE, 'DD/MM/YYYY').format('DD/MM/YYYY'))) {
         }
@@ -5157,39 +5300,41 @@ export class MigrateService {
           newObj['EFFECT_DATE'] = effectDate;
           newObj['CATEGORY'] = ele.CATEGORY;
           newObj['DEPR_RATE'] = ele.DEPR_RATE;
-          await queryRunner.manager.insert(DEPRRATE, newObj);
+          //await queryRunner.manager.insert(DEPRRATE, newObj);
+          await deprrateRepo.save(newObj);
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('DEPRRATE')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //interest rate for loan anc cc
   // intrateloan-lnccloan
   async INTRATELOAN() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    //let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       //let result = await connection2.execute(`select distinct intrateLOAN.ACNOTYPE,intrateLOAN.INT_CATEGORY,intrateLOAN.EFFECT_DATE,intrateLOAN.actype, schemast.S_APPL as ac_type  from INTRATELOAN left join schemast on intrateLOAN.actype=schemast.s_appl order by intrateLOAN.effect_date asc`)
-      let result = await connection2.execute(`select * from INTRATELOAN order by effect_date asc`)
+      let result = await this.connectionByOracle.execute(`select * from INTRATELOAN order by effect_date asc`)
       let data = await this.jsonConverter(result);
-      let pgData = await this.INTRATELOANService.find()
+      const intrateLoanRepo = this.dataSourcePg.getRepository(INTRATELOAN);
+      let pgData = await intrateLoanRepo.find()
       for (let ele of data) {
         if (pgData.some(date => moment(date['EFFECT_DATE'], 'DD/MM/YYYY').format('DD/MM/YYYY') == moment(ele.EFFECT_DATE, 'DD/MM/YYYY').format('DD/MM/YYYY'))) {
         }
         else {
-          let intCategory = await connection2.execute(`select CODE from INTCATEGORYMASTER where CODE=${ele.INT_CATEGORY}`)
+          let intCategory = await this.connectionByOracle.execute(`select CODE from INTCATEGORYMASTER where CODE=${ele.INT_CATEGORY}`)
           let int_category = await this.jsonConverter(intCategory);
           let int_cat
           int_category.forEach(eleme => {
@@ -5201,17 +5346,19 @@ export class MigrateService {
           InterestRate['INT_CATEGORY'] = int_cat.id
           // InterestRate['INT_CATEGORY'] = Number(ele.INT_CATEGORY)
           InterestRate['EFFECT_DATE'] = effectDate;
-          let rate = await queryRunner.manager.save(INTRATELOAN, InterestRate);
+          //let rate = await queryRunner.manager.save(INTRATELOAN, InterestRate);
+          let rate = await intrateLoanRepo.save(InterestRate);
           //GRID QUERY
           let result1
           if (ele.ACTYPE != null) {
-            result1 = await connection2.execute(`select * FROM INTRATELOAN WHERE ACNOTYPE='${ele.ACNOTYPE}' AND INT_CATEGORY=${ele.INT_CATEGORY} AND EFFECT_DATE=TO_DATE('${effectDate}','DD/MM/YY')  AND ACTYPE=${ele.ACTYPE}`)
+            result1 = await this.connectionByOracle.execute(`select * FROM INTRATELOAN WHERE ACNOTYPE='${ele.ACNOTYPE}' AND INT_CATEGORY=${ele.INT_CATEGORY} AND EFFECT_DATE=TO_DATE('${effectDate}','DD/MM/YY')  AND ACTYPE=${ele.ACTYPE}`)
           }
           else {
-            result1 = await connection2.execute(`select * FROM INTRATELOAN WHERE ACNOTYPE='${ele.ACNOTYPE}' AND INT_CATEGORY=${ele.INT_CATEGORY} AND EFFECT_DATE=TO_DATE('${effectDate}','DD/MM/YY')`)
+            result1 = await this.connectionByOracle.execute(`select * FROM INTRATELOAN WHERE ACNOTYPE='${ele.ACNOTYPE}' AND INT_CATEGORY=${ele.INT_CATEGORY} AND EFFECT_DATE=TO_DATE('${effectDate}','DD/MM/YY')`)
           }
           // select * FROM INTRATETD WHERE ACNOTYPE='TD' AND INT_CATEGORY=2 AND EFFECT_DATE=TO_DATE('01/10/2016','DD/MM/YYYY' AND ACTYPE=20100)
           let grid = await this.jsonConverter(result1);
+          const lnccLoanRepo = this.dataSourcePg.getRepository(LNCCLOAN);
           for (let element of grid) {
             let newRate = new LNCCLOAN();
             newRate['FROM_AMOUNT'] = element.FROM_AMOUNT;
@@ -5219,39 +5366,41 @@ export class MigrateService {
             newRate['INT_RATE'] = element.INT_RATE;
             newRate['PENAL_INT_RATE'] = element.PENAL_INT_RATE;
             newRate['idRateID'] = rate.id;
-            await queryRunner.manager.insert(LNCCLOAN, newRate);
+            //await queryRunner.manager.insert(LNCCLOAN, newRate);
+            await lnccLoanRepo.save(newRate);
           }
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('INTRATELOAN')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //pat scheme intrest rate
   //INTRATEPATSCHEMES-intrate
   async INTRATEPATSCHEMES() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select * from INTRATEPATSCHEMES order by effect_date asc`)
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select * from INTRATEPATSCHEMES order by effect_date asc`)
       let data = await this.jsonConverter(result);
-      let pgData = await this.INTRATEPATSCHEMESService.find()
+      const intratepatschemesRepo = this.dataSourcePg.getRepository(INTRATEPATSCHEMES);
+      let pgData = await intratepatschemesRepo.find()
       for (let ele of data) {
         if (pgData.some(date => moment(date['EFFECT_DATE'], 'DD/MM/YYYY').format('DD/MM/YYYY') == moment(ele.EFFECT_DATE, 'DD/MM/YYYY').format('DD/MM/YYYY'))) {
         }
         else {
-          let intCategory = await connection2.execute(`select CODE from INTCATEGORYMASTER where CODE=${ele.INT_CATEGORY}`)
+          let intCategory = await this.connectionByOracle.execute(`select CODE from INTCATEGORYMASTER where CODE=${ele.INT_CATEGORY}`)
           let int_category = await this.jsonConverter(intCategory);
           let int_cat
           int_category.forEach(eleme => {
@@ -5264,14 +5413,15 @@ export class MigrateService {
           InterestRate['AC_TYPE'] = schemastData[0].id
           InterestRate['INT_CATEGORY'] = int_cat.id
           InterestRate['EFFECT_DATE'] = effectDate;
-          let tdRate = await queryRunner.manager.save(INTRATEPATSCHEMES, InterestRate);
+          //let tdRate = await queryRunner.manager.save(INTRATEPATSCHEMES, InterestRate);
+          let interestRate = await intratepatschemesRepo.save(InterestRate);
           //GRID QUERY
           let result1
           if (ele.AC_TYPE == null) {
-            result1 = await connection2.execute(`select * FROM INTRATEPATSCHEMES WHERE INT_CATEGORY=${ele.INT_CATEGORY} AND EFFECT_DATE=TO_DATE('${effectDate}','DD/MM/YYYY')`)
+            result1 = await this.connectionByOracle.execute(`select * FROM INTRATEPATSCHEMES WHERE INT_CATEGORY=${ele.INT_CATEGORY} AND EFFECT_DATE=TO_DATE('${effectDate}','DD/MM/YYYY')`)
           }
           else {
-            result1 = await connection2.execute(`select * FROM INTRATEPATSCHEMES WHERE ac_type='${ele.AC_TYPE}' AND INT_CATEGORY=${ele.INT_CATEGORY} AND EFFECT_DATE=TO_DATE('${effectDate}','DD/MM/YYYY')`)
+            result1 = await this.connectionByOracle.execute(`select * FROM INTRATEPATSCHEMES WHERE ac_type='${ele.AC_TYPE}' AND INT_CATEGORY=${ele.INT_CATEGORY} AND EFFECT_DATE=TO_DATE('${effectDate}','DD/MM/YYYY')`)
           }
           // select * FROM INTRATEPATSCHEMES WHERE ac_type='20200' AND INT_CATEGORY=1 AND EFFECT_DATE=TO_DATE('01/01/2001','DD/MM/YYYY')
           let grid = await this.jsonConverter(result1);
@@ -5281,34 +5431,36 @@ export class MigrateService {
             newRate['DAYS'] = element.DAYS;
             newRate['INT_RATE'] = element.INT_RATE;
             newRate['idRateID'] = tdRate.id;
-            await queryRunner.manager.insert(INTRATE, newRate);
+            //await queryRunner.manager.insert(INTRATE, newRate);
+            await intratepatschemesRepo.save(newRate);
           }
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('INTRATEPATSCHEMES')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //prmature pigmy less int rate
   //PREMATULESSRATE:prematuless
   async PREMATULESSRATE() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select distinct PREMATULESSRATE.EFFECT_DATE,PREMATULESSRATE.actype, schemast.S_APPL as ac_type  from PREMATULESSRATE left join schemast on PREMATULESSRATE.actype=schemast.s_appl order by PREMATULESSRATE.effect_date asc`)
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select distinct PREMATULESSRATE.EFFECT_DATE,PREMATULESSRATE.actype, schemast.S_APPL as ac_type  from PREMATULESSRATE left join schemast on PREMATULESSRATE.actype=schemast.s_appl order by PREMATULESSRATE.effect_date asc`)
       let data = await this.jsonConverter(result);
-      let pgData = await this.PREMATULESSRATEService.find()
+      const prematulessrateRepo = this.dataSourcePg.getRepository(PREMATULESSRATE);
+      let pgData = await prematulessrateRepo.find();
       for (let ele of data) {
         if (pgData.some(date => moment(date['EFFECT_DATE'], 'DD/MM/YYYY').format('DD/MM/YYYY') == moment(ele.EFFECT_DATE, 'DD/MM/YYYY').format('DD/MM/YYYY'))) {
         }
@@ -5317,60 +5469,64 @@ export class MigrateService {
           let effectDate = ele.EFFECT_DATE == '' || ele.EFFECT_DATE == null ? null : moment(ele.EFFECT_DATE).format('DD/MM/YYYY')
           InterestRate['AC_ACNOTYPE'] = ele.AC_TYPE == null ? null : Number(ele.AC_TYPE)
           InterestRate['EFFECT_DATE'] = effectDate;
-          let tdRate = await queryRunner.manager.save(PREMATULESSRATE, InterestRate);
+          //let tdRate = await queryRunner.manager.save(PREMATULESSRATE, InterestRate);
+          let tdRate = await prematulessrateRepo.save(InterestRate);
           //GRID QUERY
           let result1
           if (ele.ACTYPE == null) {
-            result1 = await connection2.execute(`select * FROM PREMATULESSRATE WHERE EFFECT_DATE=TO_DATE('${effectDate}','DD/MM/YYYY') `)
+            result1 = await this.connectionByOracle.execute(`select * FROM PREMATULESSRATE WHERE EFFECT_DATE=TO_DATE('${effectDate}','DD/MM/YYYY') `)
           }
           else {
-            result1 = await connection2.execute(`select * FROM PREMATULESSRATE WHERE EFFECT_DATE=TO_DATE('${effectDate}','DD/MM/YYYY')  AND ACTYPE=${ele.ACTYPE}`)
+            result1 = await this.connectionByOracle.execute(`select * FROM PREMATULESSRATE WHERE EFFECT_DATE=TO_DATE('${effectDate}','DD/MM/YYYY')  AND ACTYPE=${ele.ACTYPE}`)
           }
 
           // select * FROM PREMATULESSRATE WHERE EFFECT_DATE=TO_DATE('01/01/2000','DD/MM/YYYY')  AND ACTYPE=30500
           let grid = await this.jsonConverter(result1);
+          const prematulessRepo = this.dataSourcePg.getRepository(PREMATULESS);
           for (let element of grid) {
             let newRate = new PREMATULESS();
             newRate['FROM_MONTHS'] = element.FROM_MONTHS;
             newRate['TO_MONTHS'] = element.TO_MONTHS;
             newRate['LESS_INT_RATE'] = element.LESS_INT_RATE;
             newRate['idRateID'] = tdRate.id;
-            await queryRunner.manager.insert(PREMATULESS, newRate);
+            //await queryRunner.manager.insert(PREMATULESS, newRate);
+            await prematulessRepo.save(newRate);
           }
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('PREMATULESSRATE')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //saving and pigmy interest rate
   //INTRATESBPG
   async INTRATESBPG() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       //let result = await connection2.execute('select INTRATESBPG.*, schemast.S_APPL as AC_TYPE from INTRATESBPG left join schemast on schemast.s_appl= intratesbpg.actype');
-      let result = await connection2.execute('select * from INTRATESBPG ');
+      let result = await this.connectionByOracle.execute('select * from INTRATESBPG ');
       let data = await this.jsonConverter(result);
-      let pgData = await this.INTRATESBPGService.find()
+      const intratesbpgRepo = this.dataSourcePg.getRepository(INTRATESBPG);
+      let pgData = await intratesbpgRepo.find();
       for (let ele of data) {
         let schemastData = this.PostSchemast.filter(ele1 => ele1['AC_TYPE_PATA'] == ele.AC_TYPE);
 
         if (pgData.some(date => moment(date['EFFECT_DATE'], 'DD/MM/YYYY').format('DD/MM/YYYY') == moment(ele.EFFECT_DATE, 'DD/MM/YYYY').format('DD/MM/YYYY'))) {
         }
         else {
-          let intCategory = await connection2.execute(`select CODE from INTCATEGORYMASTER where CODE=${ele.INT_CATEGORY}`)
+          let intCategory = await this.connectionByOracle.execute(`select CODE from INTCATEGORYMASTER where CODE=${ele.INT_CATEGORY}`)
           let int_category = await this.jsonConverter(intCategory);
           let int_cat
           int_category.forEach(eleme => {
@@ -5384,31 +5540,33 @@ export class MigrateService {
           newObj['ACNOTYPE'] = 1
           newObj['TYPE'] = ele.ACNOTYPE;
           newObj['INT_CATEGORY'] = int_cat.id;
-          await queryRunner.manager.insert(INTRATESBPG, newObj);
+          //await queryRunner.manager.insert(INTRATESBPG, newObj);
+          await intratesbpgRepo.save(newObj);
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('INTRATESBPG')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   //security code
   //securitymaster
   async SECURITYMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM SECURITYMASTER WHERE SECU_CODE > 8 order by SECU_CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM SECURITYMASTER WHERE SECU_CODE > 8 order by SECU_CODE');
       let data = await this.jsonConverter(result);
+      const securityMasterRepo = this.dataSourcePg.getRepository(SECURITYMASTER);
       for (let ele of data) {
         let security = new SECURITYMASTER()
         security['SECU_NAME'] = ele.SECU_NAME.replace("\x00", "")
@@ -5427,31 +5585,33 @@ export class MigrateService {
         security['GOLD_SILVER'] = ele.GOLD_SILVER == 0 ? 0 : 1
         security['OTHER_SECURITY'] = ele.OTHER_SECURITY == 0 ? 0 : 1
         security['CUST_INSURANCE'] = ele.CUST_INSURANCE == 0 ? 0 : 1
-        let sec = await queryRunner.manager.insert(SECURITYMASTER, security)
+        //let sec = await queryRunner.manager.insert(SECURITYMASTER, security)
+        let sec = await securityMasterRepo.save(security)
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('SECURITYMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //tds interest rate
   //tdsrate
   async TDSRATE() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from tdsrate');
+      // let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from tdsrate');
       let data = await this.jsonConverter(result);
+      const tdsrateRepo = this.dataSourcePg.getRepository(TDSRATE);
       for (let ele of data) {
         let tds = new TDSRATE()
         tds['FIN_YEAR'] = ele.FIN_YEAR
@@ -5459,39 +5619,43 @@ export class MigrateService {
         tds['TDS_RATE'] = ele.TDS_RATE
         tds['SURCHARGE_RATE'] = ele.SURCHARGE_RATE
         tds['EFFECT_DATE'] = ele.EFFECT_DATE == '' || ele.EFFECT_DATE == null ? null : moment(ele.EFFECT_DATE).format('DD/MM/YYYY')
-        let tdsrates = await queryRunner.manager.insert(TDSRATE, tds)
+        //let tdsrates = await queryRunner.manager.insert(TDSRATE, tds)
+        let tdsrates = await tdsrateRepo.save(tds)
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('TDSRATE')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   //NPAMASTER
   async NPAMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`SELECT distinct effect_date,npa_base_days from NPAMASTER order by effect_date asc`)
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`SELECT distinct effect_date,npa_base_days from NPAMASTER order by effect_date asc`)
       let data = await this.jsonConverter(result);
+      const npaMasterRepo = this.dataSourcePg.getRepository(NPAMASTER);
       for (let ele of data) {
         let InterestRate = new NPAMASTER()
         let effectDate = ele.EFFECT_DATE == '' || ele.EFFECT_DATE == null ? null : moment(ele.EFFECT_DATE).format('DD/MM/YYYY')
         InterestRate['NPA_BASE_DAYS'] = ele.NPA_BASE_DAYS
         InterestRate['EFFECT_DATE'] = effectDate;
-        let npa = await queryRunner.manager.save(NPAMASTER, InterestRate);
+        //let npa = await queryRunner.manager.save(NPAMASTER, InterestRate);
+        let npa = await npaMasterRepo.save(InterestRate);
         //GRID QUERY
-        let result1 = await connection2.execute(`SELECT * from NPAMASTER where EFFECT_DATE=TO_DATE('${effectDate}','DD/MM/YYYY')  AND NPA_BASE_DAYS=${ele.NPA_BASE_DAYS}`)
+        let result1 = await this.connectionByOracle.execute(`SELECT * from NPAMASTER where EFFECT_DATE=TO_DATE('${effectDate}','DD/MM/YYYY')  AND NPA_BASE_DAYS=${ele.NPA_BASE_DAYS}`)
         // SELECT * from NPAMASTER where EFFECT_DATE=TO_DATE('01/04/2007','DD/MM/YYYY') AND npa_base_days=365
         let grid = await this.jsonConverter(result1);
+        const npaClassificationRepo = this.dataSourcePg.getRepository(NPACLASSIFICATION);
         for (let element of grid) {
           let obj = new NPACLASSIFICATION();
           obj['SERIAL_NO'] = element.SERIAL_NO
@@ -5505,30 +5669,32 @@ export class MigrateService {
           obj['SECURED_PERCENT'] = element.SECURED_PERCENT
           obj['UNSECURED_PERCENT'] = element.UNSECURED_PERCENT
           obj['NPAClassID'] = npa.id
-          await queryRunner.manager.insert(NPACLASSIFICATION, obj);
+          //await queryRunner.manager.insert(NPACLASSIFICATION, obj);
+          await npaClassificationRepo.save(obj);
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('NPAMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   //COMMISSIONSLAB
   async COMMISSIONSLAB() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from COMMISSIONSLAB');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from COMMISSIONSLAB');
       let data = await this.jsonConverter(result);
+      const commissionSlabRepo = this.dataSourcePg.getRepository(COMMISSIONSLAB);
       for (let ele of data) {
         let slab = new COMMISSIONSLAB()
         slab['INSTRUMENT_TYPE'] = ele.INSTRUMENT_TYPE
@@ -5540,24 +5706,25 @@ export class MigrateService {
         slab['RATE_PER_UNIT'] = ele.RATE_PER_UNIT
         slab['MIN_COMMISSION'] = ele.MIN_COMMISSION
         slab['MAX_COMMISSION'] = ele.MAX_COMMISSION
-        let slabrates = queryRunner.manager.insert(COMMISSIONSLAB, slab)
+        //let slabrates = queryRunner.manager.insert(COMMISSIONSLAB, slab)
+        await commissionSlabRepo.save(slab);
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('COMMISSIONSLAB')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   //pgMASTER with offset and limit
   async PGMASTERCORRECTION() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(
       `select * from (
             select rownum offset, rs.* from (
           SELECT NOTFOUNDPGMASTER.*,  CATEGORYMASTER.CODE AS ACCATG ,  SCHEMAST.TYPEID AS AC_TYPE1 ,
@@ -5574,16 +5741,16 @@ export class MigrateService {
     );
     var data = await this.jsonConverter(result);
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from NOTFOUNDPGMASTER`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from NOTFOUNDPGMASTER`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    await this.connectionByOracle.close()
     this.count = result1[0].COUNT;
     await this.PGMASTERSCRIPTWITHLIMIT(data);
   }
   //pgMASTER with offset and limit
   async PGmasterScript() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(
       `select * from (
             select rownum offset, rs.* from (
               SELECT PGMASTER.*,  CATEGORYMASTER.CODE AS ACCATG ,  SCHEMAST.S_APPL ,
@@ -5604,16 +5771,17 @@ export class MigrateService {
     var data = await this.jsonConverter(result);
 
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from PGMASTER WHERE PGMASTER.AC_OPDATE > TO_DATE('25/01/2026','DD/MM/YYYY')`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from PGMASTER WHERE PGMASTER.AC_OPDATE > TO_DATE('25/01/2026','DD/MM/YYYY')`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    await this.connectionByOracle.close()
     this.count = result1[0].COUNT;
     await this.PGMASTERSCRIPTWITHLIMIT(data);
   }
   async PGMASTERSCRIPTWITHLIMIT(data) {
     let operations = await this.OPERATIONMASTERService.find()
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let PGMASTERData = await this.PGMASTERService.find()
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    const pgmasterRepo = this.dataSourcePg.getRepository(PGMASTER);
+    let PGMASTERData = await pgmasterRepo.find()
     for (let ele of data) {
       if (ele.AC_TYPE == null) {
         continue;
@@ -5625,7 +5793,7 @@ export class MigrateService {
 
       let idmasterID
       if (ele.AC_CUSTID != null) {
-        let CUSTID = await connection2.execute(`select AC_NO from IDMASTER where AC_NO=${ele.AC_CUSTID}`)
+        let CUSTID = await this.connectionByOracle.execute(`select AC_NO from IDMASTER where AC_NO=${ele.AC_CUSTID}`)
         let IDMASTER = await this.jsonConverter(CUSTID);
         for (let eleme of IDMASTER) {
           idmasterID = (this.Postidmaster.find(idmaster => idmaster['ORA_AC_NO'] == eleme.AC_NO && idmaster['ORA_BRANCH'] == this.BRANCH_CODE))
@@ -5636,19 +5804,19 @@ export class MigrateService {
       // }
       let AGENT_TYPE = null
       if (ele.AGENT_ACTYPE != null) {
-        let AGENTTYPE = await connection2.execute(`select S_APPL from schemast where S_APPL=${ele.AGENT_ACTYPE}`)
+        let AGENTTYPE = await this.connectionByOracle.execute(`select S_APPL from schemast where S_APPL=${ele.AGENT_ACTYPE}`)
         AGENT_TYPE = await this.jsonConverter(AGENTTYPE);
       }
       let mem_TYPE = null
       if (ele.AC_MEMBTYPE != null) {
-        let memTYPE = await connection2.execute(`select S_APPL from schemast where S_APPL=${ele.AC_MEMBTYPE}`)
+        let memTYPE = await this.connectionByOracle.execute(`select S_APPL from schemast where S_APPL=${ele.AC_MEMBTYPE}`)
         mem_TYPE = await this.jsonConverter(memTYPE);
       }
 
       //directormaster find
       let directorID = null
       if (ele.AC_DIRECT != null) {
-        let direct = await connection2.execute(`select CODE from DIRECTORMASTER where CODE=${ele.AC_DIRECT}`)
+        let direct = await this.connectionByOracle.execute(`select CODE from DIRECTORMASTER where CODE=${ele.AC_DIRECT}`)
         let directormaster = await this.jsonConverter(direct);
         for (let deleme of directormaster) {
           directorID = (this.PostdirectorMaster.find(directorMaster => directorMaster['CODE'] == deleme.CODE))
@@ -5657,7 +5825,7 @@ export class MigrateService {
       let categoryID = null
       if (ele.ACCATG != null) {
         //categorymaster find
-        let categoryM = await connection2.execute(`select CODE from CATEGORYMASTER where CODE=${ele.ACCATG}`)
+        let categoryM = await this.connectionByOracle.execute(`select CODE from CATEGORYMASTER where CODE=${ele.ACCATG}`)
         let categoryMaster = await this.jsonConverter(categoryM);
         for (let celeme of categoryMaster) {
           categoryID = (this.PostCategoryMaster.find(category => category['CODE'] == celeme.CODE))
@@ -5666,7 +5834,7 @@ export class MigrateService {
       let OperationID = null
       if (ele.AC_OPR_CODE != null) {
         //operationmaster find
-        let categoryM = await connection2.execute(`select NAME from operationmaster where CODE=${ele.AC_OPR_CODE}`)
+        let categoryM = await this.connectionByOracle.execute(`select NAME from operationmaster where CODE=${ele.AC_OPR_CODE}`)
         let categoryMaster = await this.jsonConverter(categoryM);
         for (let celeme of categoryMaster) {
           OperationID = (operations.find(operations => operations['CODE'] == celeme.CODE))
@@ -5675,7 +5843,7 @@ export class MigrateService {
       let intcategoryID = null
       if (ele.AC_INTCATA != null) {
         //intrate category master find
-        let categoryM = await connection2.execute(`select CODE from INTCATEGORYMASTER where CODE=${ele.AC_INTCATA}`)
+        let categoryM = await this.connectionByOracle.execute(`select CODE from INTCATEGORYMASTER where CODE=${ele.AC_INTCATA}`)
         let categoryMaster = await this.jsonConverter(categoryM);
         for (let celeme of categoryMaster) {
           intcategoryID = (this.PostInterestCategoryData.find(intCategory => intCategory['CODE'] == celeme.CODE))
@@ -5684,7 +5852,7 @@ export class MigrateService {
       let AC_INTROBRANCHID = null
       if (ele.AC_INTROBRANCH != null) {
         //intrate category master find
-        let categoryM = await connection2.execute(`select CODE from OWNBRANCHMASTER where CODE=${ele.AC_INTROBRANCH}`)
+        let categoryM = await this.connectionByOracle.execute(`select CODE from OWNBRANCHMASTER where CODE=${ele.AC_INTROBRANCH}`)
         let categoryMaster = await this.jsonConverter(categoryM);
         for (let celeme of categoryMaster) {
           AC_INTROBRANCHID = (this.PostBranch.find(ownbranchmaster => ownbranchmaster['CODE'] == celeme.CODE))
@@ -5778,12 +5946,13 @@ export class MigrateService {
       newObj['AC_TYPE'] = schemastData[0].id
       newObj['SYSCHNG_LOGIN'] = ele.OFFICER_CODE
       newObj['AC_PAYBLEINT_OP'] = ele.AC_PAYBLEINT_OP == null ? 0 : ele.AC_PAYBLEINT_OP
-      let master = await this.PGMASTERService.save(newObj);
+      //let master = await this.PGMASTERService.save(newObj);
+      let master = await pgmasterRepo.save(newObj);
       let nomniee = await this.nomineelink('PGMASTER', ele.AC_ACNOTYPE, ele.DPTYPE, ele.AC_NO, master.id, master.BANKACNO)
       let attorney = await this.atteroney('PGMASTER', ele.AC_ACNOTYPE, ele.DPTYPE, ele.AC_NO, master.id)
       let joint = await this.jointAc('PGMASTER', ele.AC_ACNOTYPE, ele.DPTYPE, ele.AC_NO, master.id, master.BANKACNO)
     }
-    await connection2.close()
+    //await connection2.close()
     if (this.offset <= this.count && this.flag == 0) {
       this.offset = this.offset + 1000;
       await this.PGmasterScript()
@@ -5801,8 +5970,8 @@ export class MigrateService {
 
   //SHMASTER with offset and limit
   async SHmasterCORRECTION() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(
       `select * from (
             select rownum offset, rs.* from (
               SELECT NOTFOUNDSHMASTER.*,  
@@ -5821,15 +5990,15 @@ export class MigrateService {
     var data = await this.jsonConverter(result);
 
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from NOTFOUNDSHMASTER`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from NOTFOUNDSHMASTER`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    //await connection2.close()
     this.count = result1[0].COUNT;
     await this.SHMASTERSCRIPTWITHLIMIT(data);
   }
   async SHmasterScript() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(
       `select * from (
             select rownum offset, rs.* from (
               SELECT SHMASTER.*,  
@@ -5849,19 +6018,20 @@ export class MigrateService {
     var data = await this.jsonConverter(result);
 
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from SHMASTER`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from SHMASTER`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    //await connection2.close()
     this.count = result1[0].COUNT;
     await this.SHMASTERSCRIPTWITHLIMIT(data);
   }
   async SHMASTERSCRIPTWITHLIMIT(data) {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let shmasterData = await this.SHMASTERService.find()
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      const shmasterRepo = this.dataSourcePg.getRepository(SHMASTER);
+      let shmasterData = await shmasterRepo.find();
       for (let ele of data) {
         //idmaster find   
         if (ele.AC_TYPE == null) {
@@ -5875,7 +6045,7 @@ export class MigrateService {
 
         let idmasterID
         if (ele.AC_CUSTID != null || ele.AC_CUSTID == null) {
-          let CUSTID = await connection2.execute(`select AC_NO from IDMASTER where AC_NO=${ele.AC_CUSTID}`)
+          let CUSTID = await this.connectionByOracle.execute(`select AC_NO from IDMASTER where AC_NO=${ele.AC_CUSTID}`)
           let IDMASTER = await this.jsonConverter(CUSTID);
           for (let eleme of IDMASTER) {
             idmasterID = (this.Postidmaster.find(idmaster => idmaster['ORA_AC_NO'] == eleme.AC_NO && idmaster['ORA_BRANCH'] == this.BRANCH_CODE))
@@ -5889,7 +6059,7 @@ export class MigrateService {
         //directormaster find
         let directorID = null
         if (ele.AC_DIRECT != null) {
-          let direct = await connection2.execute(`select CODE from DIRECTORMASTER where CODE=${ele.AC_DIRECT}`)
+          let direct = await this.connectionByOracle.execute(`select CODE from DIRECTORMASTER where CODE=${ele.AC_DIRECT}`)
           let directormaster = await this.jsonConverter(direct);
           for (let deleme of directormaster) {
             directorID = (this.PostdirectorMaster.find(directorMaster => directorMaster['CODE'] == deleme.CODE))
@@ -5898,7 +6068,7 @@ export class MigrateService {
         let categoryID = null
         if (ele.ACCATG != null) {
           //categorymaster find
-          let categoryM = await connection2.execute(`select CODE from CATEGORYMASTER where CODE=${ele.ACCATG}`)
+          let categoryM = await this.connectionByOracle.execute(`select CODE from CATEGORYMASTER where CODE=${ele.ACCATG}`)
           let categoryMaster = await this.jsonConverter(categoryM);
           for (let celeme of categoryMaster) {
             categoryID = (this.PostCategoryMaster.find(category => category['CODE'] == celeme.CODE))
@@ -5970,10 +6140,11 @@ export class MigrateService {
         newObj['BANKACNO'] = BANKACNO;
         newObj['SYSCHNG_LOGIN'] = ele.OFFICER_CODE;
         newObj['REF_ID'] = ele.REF_ID
-        let shmasterinsert = await this.SHMASTERService.save(newObj);
+        //let shmasterinsert = await this.SHMASTERService.save(newObj);
+        let shmasterinsert = await shmasterRepo.save(newObj);
         let nomniee = await this.nomineelink('SHMASTER', 'SH', ele.SHTYPE, ele.SHAC_NO, shmasterinsert.id, shmasterinsert.BANKACNO)
       }
-      await connection2.close()
+      //await connection2.close()
       if (this.offset <= this.count && this.flag == 0) {
         this.offset = this.offset + 1000;
         // await queryRunner.commitTransaction();
@@ -5992,11 +6163,11 @@ export class MigrateService {
 
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   async updateBal(ele) {
@@ -6005,8 +6176,8 @@ export class MigrateService {
   }
   //DPMASTER WITH OFFSET AND LIMIT 
   async DPMASTERCorrection() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(
       `select * from (
             select rownum offset, rs.* from (
               SELECT NOTFOUNDDPMASTER.*, SCHEMAST.TYPEID AS AC_TYPE1         
@@ -6018,16 +6189,16 @@ export class MigrateService {
     var data = await this.jsonConverter(result);
 
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from DPMASTER`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from DPMASTER`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    //await connection2.close()
     this.count = result1[0].COUNT;
     await this.DPMASTERSCRIPTWITHLIMIT(data);
   }
 
   async DPMASTERScript() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(
       `select * from (
             select rownum offset, rs.* from (
               SELECT  DPMASTER.*,  SCHEMAST.S_APPL        
@@ -6044,9 +6215,9 @@ export class MigrateService {
     var data = await this.jsonConverter(result);
 
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from  DPMASTER`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from  DPMASTER`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    //await connection2.close()
     this.count = result1[0].COUNT;
     console.log(this.count)
     await this.DPMASTERSCRIPTWITHLIMIT(data);
@@ -6056,7 +6227,8 @@ export class MigrateService {
     let dpmasterData = await this.DPMASTERService.find()
     let balcata = await this.BALACATAService.find()
     let operations = await this.OPERATIONMASTERService.find()
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+     const dpmasterRepo = this.dataSourcePg.getRepository(DPMASTER);
     for (let ele of data) {
       console.log('ele.AC_TYPE:', ele.AC_TYPE)
       if (ele.AC_TYPE == null) {
@@ -6118,10 +6290,10 @@ export class MigrateService {
       let CUSTID
       if (ele.AC_CUSTID == null) {
         //  CUSTID = ele.AC_CUSTID == 0 || ele.AC_CUSTID == null || ele.AC_CUSTID == undefined ? 36 : ele.AC_CUSTID
-        CUSTID = await connection2.execute(`select * from IDMASTER where AC_NO='1'`)
+        CUSTID = await this.connectionByOracle.execute(`select * from IDMASTER where AC_NO='1'`)
 
       } else {
-        CUSTID = await connection2.execute(`select * from  IDMASTER where AC_NO='${ele.AC_CUSTID}'`)
+        CUSTID = await this.connectionByOracle.execute(`select * from  IDMASTER where AC_NO='${ele.AC_CUSTID}'`)
       }
       // let CUSTID2 = await connection2.execute(`select * from IDMASTER`)
       // let IDMASTER2 = await this.jsonConverter(CUSTID2);
@@ -6139,7 +6311,7 @@ export class MigrateService {
 
       let pigmy_TYPE = null
       if (ele.PIGMY_ACTYPE != null) {
-        let AGENTTYPE = await connection2.execute(`select  S_APPL from  schemast where S_APPL=${ele.PIGMY_ACTYPE}`)
+        let AGENTTYPE = await this.connectionByOracle.execute(`select  S_APPL from  schemast where S_APPL=${ele.PIGMY_ACTYPE}`)
         let PG_ACTYPE = await this.jsonConverter(AGENTTYPE);
 
         let AGENTTYP = this.PostSchemast.filter(ele => ele['AC_TYPE_SANGALI'] == PG_ACTYPE[0].S_APPL);
@@ -6148,13 +6320,13 @@ export class MigrateService {
       }
       let mem_TYPE = null
       if (ele.AC_MEMBTYPE != null) {
-        let memTYPE = await connection2.execute(`select  S_APPL from  schemast where S_APPL=${ele.AC_MEMBTYPE}`)
+        let memTYPE = await this.connectionByOracle.execute(`select  S_APPL from  schemast where S_APPL=${ele.AC_MEMBTYPE}`)
         mem_TYPE = await this.jsonConverter(memTYPE);
       }
       let categoryID = null
       if (ele.AC_CATG != null) {
         //categorymaster find
-        let categoryM = await connection2.execute(`select CODE from CATEGORYMASTER where CODE=${ele.AC_CATG}`)
+        let categoryM = await this.connectionByOracle.execute(`select CODE from CATEGORYMASTER where CODE=${ele.AC_CATG}`)
         let categoryMaster = await this.jsonConverter(categoryM);
         for (let celeme of categoryMaster) {
           //categoryID = (this.PostCategoryMaster.find(category => category['NAME'] == celeme.NAME))
@@ -6164,7 +6336,7 @@ export class MigrateService {
       let OperationID = null
       if (ele.AC_OPR_CODE != null) {
         //operationmaster find
-        let categoryM = await connection2.execute(`select CODE from operationmaster where CODE=${ele.AC_OPR_CODE}`)
+        let categoryM = await this.connectionByOracle.execute(`select CODE from operationmaster where CODE=${ele.AC_OPR_CODE}`)
         let categoryMaster = await this.jsonConverter(categoryM);
         for (let celeme of categoryMaster) {
           //OperationID = (operations.find(operations => operations['NAME'] == celeme.NAME))
@@ -6174,7 +6346,7 @@ export class MigrateService {
       let intcategoryID = null
       if (ele.AC_INTCATA != null) {
         //intrate category master find
-        let categoryM = await connection2.execute(`select CODE from INTCATEGORYMASTER where CODE=${ele.AC_INTCATA}`)
+        let categoryM = await this.connectionByOracle.execute(`select CODE from INTCATEGORYMASTER where CODE=${ele.AC_INTCATA}`)
         let categoryMaster = await this.jsonConverter(categoryM);
         for (let celeme of categoryMaster) {
           intcategoryID = (this.PostInterestCategoryData.find(intCategory => intCategory['CODE'] == celeme.CODE))
@@ -6183,7 +6355,7 @@ export class MigrateService {
       let AC_INTROBRANCHID = null
       if (ele.AC_INTROBRANCH != null) {
         //intrate category master find
-        let categoryM = await connection2.execute(`select CODE from OWNBRANCHMASTER where CODE=${ele.AC_INTROBRANCH}`)
+        let categoryM = await this.connectionByOracle.execute(`select CODE from OWNBRANCHMASTER where CODE=${ele.AC_INTROBRANCH}`)
         let categoryMaster = await this.jsonConverter(categoryM);
         for (let celeme of categoryMaster) {
           AC_INTROBRANCHID = (this.PostBranch.find(ownbranchmaster => ownbranchmaster['CODE'] == celeme.CODE))
@@ -6192,7 +6364,7 @@ export class MigrateService {
       let BALCATAID = null
       if (ele.AC_BALCATG != null) {
         //intrate category master find
-        let categoryM = await connection2.execute(`select BC_CODE from BALACATA where BC_CODE=${ele.AC_BALCATG}`)
+        let categoryM = await this.connectionByOracle.execute(`select BC_CODE from BALACATA where BC_CODE=${ele.AC_BALCATG}`)
         let categoryMaster = await this.jsonConverter(categoryM);
         for (let celeme of categoryMaster) {
           BALCATAID = (balcata.find(balcata => balcata['BC_CODE'] == celeme.BC_CODE))
@@ -6202,7 +6374,7 @@ export class MigrateService {
       // console.log('schemast:',schemastData[0].S_APPL)
       let TD_ACTYPE = null
       if (ele.TD_ACTYPE != null && ele.TD_ACTYPE != ' ') {
-        let AGENTTYPE = await connection2.execute(`select S_APPL from  schemast where S_APPL=${Number(ele.TD_ACTYPE)}`)
+        let AGENTTYPE = await this.connectionByOracle.execute(`select S_APPL from  schemast where S_APPL=${Number(ele.TD_ACTYPE)}`)
         TD_ACTYPE = await this.jsonConverter(AGENTTYPE);
       }
       let lockerSchemeData = null
@@ -6363,7 +6535,8 @@ export class MigrateService {
       newObj['AC_TYPE'] = schemastData[0].id
       newObj['SYSCHNG_LOGIN'] = ele.OFFICER_CODE
       //newObj['OID'] = ele.ID
-      let master = await this.DPMASTERService.save(newObj);
+      // let master = await this.DPMASTERService.save(newObj);
+      let master =  await dpmasterRepo.save(newObj);
       // let master = await this.DPMASTERService.update(dpmasterDuplicate[0].id,newObj);
 
 
@@ -6374,7 +6547,7 @@ export class MigrateService {
       // }
 
     }
-    await connection2.close()
+    //await connection2.close()
     if (this.offset <= this.count && this.flag == 0) {
       this.offset = this.offset + 1000;
       await this.DPMASTERScript()
@@ -6631,8 +6804,8 @@ export class MigrateService {
   // }
   //lnmaster with offset and limit
   async lnmasterCorrection() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from (
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from (
             select rownum offset, rs.* from (
               SELECT NOTFOUNDLNMASTER.*,  SCHEMAST.TYPEID AS AC_TYPE1  from NOTFOUNDLNMASTER  
               LEFT JOIN SCHEMAST ON NOTFOUNDLNMASTER.AC_TYPE= SCHEMAST.S_APPL  ORDER BY NOTFOUNDLNMASTER.AC_NO
@@ -6642,16 +6815,16 @@ export class MigrateService {
     var data = await this.jsonConverter(result);
 
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from NOTFOUNDLNMASTER`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from NOTFOUNDLNMASTER`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    //await connection2.close()
     this.count = result1[0].COUNT;
     await this.LNMASTERSCRIPTWITHLIMIT(data);
   }
   //lnmaster with offset and limit
   async lnmasterScript() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from (
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from (
             select rownum offset, rs.* from (
                SELECT LNMASTER.*,  SCHEMAST.S_APPL  from LNMASTER  
                LEFT JOIN SCHEMAST ON LNMASTER.AC_TYPE= SCHEMAST.S_APPL
@@ -6662,20 +6835,20 @@ export class MigrateService {
             order by offset ASC
             `);
     var data = await this.jsonConverter(result);
-
+    const lnmasterDataRepo = await this.dataSourcePg.getRepository(LNMASTER);
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from LNMASTER`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from LNMASTER`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    //await connection2.close()
     this.count = result1[0].COUNT;
     await this.LNMASTERSCRIPTWITHLIMIT(data);
   }
   async LNMASTERSCRIPTWITHLIMIT(data) {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       let authorityMaster = await this.AUTHORITYMASTERService.find()
       let recovercleark = await this.RECOVERYCLEARKMASTERService.find()
       let priorityMaster = await this.PRIORITYSECTORMASTERService.find()
@@ -6697,7 +6870,7 @@ export class MigrateService {
         let idmasterID
         let guaranterCustId
         if (ele.AC_CUSTID != null) {
-          let CUSTID = await connection2.execute(`select AC_NO from IDMASTER where AC_NO=${ele.AC_CUSTID}`)
+          let CUSTID = await this.connectionByOracle.execute(`select AC_NO from IDMASTER where AC_NO=${ele.AC_CUSTID}`)
           let IDMASTER = await this.jsonConverter(CUSTID);
           for (let eleme of IDMASTER) {
             idmasterID = (this.Postidmaster.find(idmaster => idmaster['ORA_AC_NO'] == eleme.AC_NO && idmaster['ORA_BRANCH'] == this.BRANCH_CODE))
@@ -6714,7 +6887,7 @@ export class MigrateService {
         let authorityID = null
         if (ele.AC_AUTHORITY != null) {
           //let categoryM = await connection2.execute(`select NAME from AUTHORITYMASTER where CODE=${ele.AC_AUTHORITY}`)
-          let categoryM = await connection2.execute(`select CODE from AUTHORITYMASTER where CODE=${ele.AC_AUTHORITY}`)
+          let categoryM = await this.connectionByOracle.execute(`select CODE from AUTHORITYMASTER where CODE=${ele.AC_AUTHORITY}`)
           let categoryMaster = await this.jsonConverter(categoryM);
           for (let celeme of categoryMaster) {
             authorityID = (authorityMaster.find(authorityMaster => authorityMaster['CODE'] == celeme.CODE))
@@ -6723,7 +6896,7 @@ export class MigrateService {
         let intcategoryID = null
         if (ele.AC_INTCATA != null) {
           //intrate category master find
-          let categoryM = await connection2.execute(`select CODE from INTCATEGORYMASTER where CODE=${ele.AC_INTCATA}`)
+          let categoryM = await this.connectionByOracle.execute(`select CODE from INTCATEGORYMASTER where CODE=${ele.AC_INTCATA}`)
           let categoryMaster = await this.jsonConverter(categoryM);
           for (let celeme of categoryMaster) {
             intcategoryID = (this.PostInterestCategoryData.find(intCategory => intCategory['CODE'] == celeme.CODE))
@@ -6732,7 +6905,7 @@ export class MigrateService {
         //directormaster find
         let directorID = null
         if (ele.AC_RECOMMEND_BY != null) {
-          let direct = await connection2.execute(`select CODE from DIRECTORMASTER where CODE=${ele.AC_RECOMMEND_BY}`)
+          let direct = await this.connectionByOracle.execute(`select CODE from DIRECTORMASTER where CODE=${ele.AC_RECOMMEND_BY}`)
           let directormaster = await this.jsonConverter(direct);
           for (let deleme of directormaster) {
             directorID = (this.PostdirectorMaster.find(directorMaster => directorMaster['CODE'] == deleme.CODE))
@@ -6741,7 +6914,7 @@ export class MigrateService {
         //directormaster find
         let directormastID = null
         if (ele.AC_DIRECTOR != null && ele.AC_DIRECTOR != 0) {
-          let direct = await connection2.execute(`select CODE from DIRECTORMASTER where CODE=${ele.AC_DIRECTOR}`)
+          let direct = await this.connectionByOracle.execute(`select CODE from DIRECTORMASTER where CODE=${ele.AC_DIRECTOR}`)
           let directormaster = await this.jsonConverter(direct);
           for (let deleme of directormaster) {
             directormastID = (this.PostdirectorMaster.find(directorMaster => directorMaster['CODE'] == deleme.CODE))
@@ -6750,7 +6923,7 @@ export class MigrateService {
         //directormaster find
         let recoverclearkID = null
         if (ele.AC_RECOVERY_CLERK != null) {
-          let direct = await connection2.execute(`select CODE from recoveryclearkmaster where CODE=${ele.AC_RECOVERY_CLERK}`)
+          let direct = await this.connectionByOracle.execute(`select CODE from recoveryclearkmaster where CODE=${ele.AC_RECOVERY_CLERK}`)
           let directormaster = await this.jsonConverter(direct);
           for (let deleme of directormaster) {
             recoverclearkID = (recovercleark.find(recovercleark => recovercleark['CODE'] == deleme.CODE))
@@ -6758,7 +6931,7 @@ export class MigrateService {
         }
         let priorityID = null
         if (ele.AC_PRIORITY != null) {
-          let direct = await connection2.execute(`select CODE from PRIORITYMASTER where CODE=${ele.AC_PRIORITY}`)
+          let direct = await this.connectionByOracle.execute(`select CODE from PRIORITYMASTER where CODE=${ele.AC_PRIORITY}`)
           let directormaster = await this.jsonConverter(direct);
           for (let deleme of directormaster) {
             priorityID = (priorityMaster.find(priorityMaster => priorityMaster['CODE'] == deleme.CODE))
@@ -6766,7 +6939,7 @@ export class MigrateService {
         }
         let AC_WEAKERID = null
         if (ele.AC_WEAKER != null) {
-          let direct = await connection2.execute(`select CODE from weakermaster where CODE=${ele.AC_WEAKER}`)
+          let direct = await this.connectionByOracle.execute(`select CODE from weakermaster where CODE=${ele.AC_WEAKER}`)
           let directormaster = await this.jsonConverter(direct);
           for (let deleme of directormaster) {
             AC_WEAKERID = (WEAKERMASTER.find(WEAKERMASTER => WEAKERMASTER['CODE'] == deleme.CODE))
@@ -6774,7 +6947,7 @@ export class MigrateService {
         }
         let AC_PURPOSE = null
         if (ele.AC_WEAKER != null) {
-          let direct = await connection2.execute(`select CODE from purposemaster where CODE=${ele.AC_PURPOSE}`)
+          let direct = await this.connectionByOracle.execute(`select CODE from purposemaster where CODE=${ele.AC_PURPOSE}`)
           let directormaster = await this.jsonConverter(direct);
           for (let deleme of directormaster) {
             AC_PURPOSE = (purpose.find(purpose => purpose['CODE'] == deleme.CODE))
@@ -6782,7 +6955,7 @@ export class MigrateService {
         }
         let AC_INDUSTRY = null
         if (ele.AC_INDUSTRY != null) {
-          let direct = await connection2.execute(`select CODE from industrymaster where CODE=${ele.AC_INDUSTRY}`)
+          let direct = await this.connectionByOracle.execute(`select CODE from industrymaster where CODE=${ele.AC_INDUSTRY}`)
           let directormaster = await this.jsonConverter(direct);
           for (let deleme of directormaster) {
             AC_INDUSTRY = (industry.find(industry => industry['CODE'] == deleme.CODE))
@@ -6790,7 +6963,7 @@ export class MigrateService {
         }
         let AC_HEALTH = null
         if (ele.AC_HEALTH != null) {
-          let direct = await connection2.execute(`select CODE from healthmaster where CODE=${ele.AC_HEALTH}`)
+          let direct = await this.connectionByOracle.execute(`select CODE from healthmaster where CODE=${ele.AC_HEALTH}`)
           let directormaster = await this.jsonConverter(direct);
           for (let deleme of directormaster) {
             AC_HEALTH = (health.find(health => health['CODE'] == deleme.CODE))
@@ -6813,7 +6986,7 @@ export class MigrateService {
 
         let mem_TYPE = null
         if (ele.AC_MEMBTYPE != null) {
-          let memTYPE = await connection2.execute(`select S_APPL from schemast where S_APPL=${ele.AC_MEMBTYPE}`)
+          let memTYPE = await this.connectionByOracle.execute(`select S_APPL from schemast where S_APPL=${ele.AC_MEMBTYPE}`)
           mem_TYPE = await this.jsonConverter(memTYPE);
         }
         let lnmasterDuplicate = this.lndata.filter(ele4 => ele4['BANKACNO'] == BANKACNO && ele4['AC_TYPE_SANGALI'] == schemastData[0].id && ele4['AC_ACNOTYPE'] == ele.AC_ACNOTYPE);
@@ -7016,11 +7189,12 @@ export class MigrateService {
         newObj['SYSCHNG_LOGIN'] = ele.OFFICER_CODE
         console.log('REF_ID:', ele.REF_ID)
         //newObj['OID'] = ele.ID
-        let LNAC = await this.LNMASTERService.save(newObj);
+        //let LNAC = await this.LNMASTERService.save(newObj);
+        let LNAC = await this.LNMASTERService.insert(newObj);
         // let LNAC = await queryRunner.manager.save(LNMASTER, newObj);
 
         //SECURITYDETAILS TABLE
-        let securitydetails = await connection2.execute(`SELECT SECURITYDETAILS .*, schemast.S_APPL  from  
+        let securitydetails = await this.connectionByOracle.execute(`SELECT SECURITYDETAILS .*, schemast.S_APPL  from  
       SECURITYDETAILS left join schemast on securitydetails.ac_type=schemast.s_appl where SECURITYDETAILS.AC_ACNOTYPE = '${ele.AC_ACNOTYPE}' AND SECURITYDETAILS.AC_TYPE = ${ele.AC_TYPE} AND SECURITYDETAILS.AC_NO = ${ele.AC_NO}`)
         let security = await this.jsonConverter(securitydetails);
         for (let element of security) {
@@ -7035,18 +7209,18 @@ export class MigrateService {
           // await queryRunner.manager.insert(SECURITYDETAILS, security);
         }
         //GUARANTERDETAILS
-        let guaranterdetails = await connection2.execute(`SELECT GUARANTERDETAILS .*, schemast.S_APPL  from  GUARANTERDETAILS left join schemast on GUARANTERDETAILS.ac_type=schemast.s_appl where GUARANTERDETAILS.AC_ACNOTYPE = '${ele.AC_ACNOTYPE}' AND GUARANTERDETAILS.AC_TYPE = ${ele.AC_TYPE} AND GUARANTERDETAILS.AC_NO = ${ele.AC_NO}`)
+        let guaranterdetails = await this.connectionByOracle.execute(`SELECT GUARANTERDETAILS .*, schemast.S_APPL  from  GUARANTERDETAILS left join schemast on GUARANTERDETAILS.ac_type=schemast.s_appl where GUARANTERDETAILS.AC_ACNOTYPE = '${ele.AC_ACNOTYPE}' AND GUARANTERDETAILS.AC_TYPE = ${ele.AC_TYPE} AND GUARANTERDETAILS.AC_NO = ${ele.AC_NO}`)
         let guaranterdetail = await this.jsonConverter(guaranterdetails);
         for (let guaranter of guaranterdetail) {
           let newObj = new GUARANTERDETAILS();
           let mem_TYPE = null
           if (ele.MEMBER_TYPE != null) {
-            let memTYPE = await connection2.execute(`select S_APPL from schemast where S_APPL=${guaranter.MEMBER_TYPE}`)
+            let memTYPE = await this.connectionByOracle.execute(`select S_APPL from schemast where S_APPL=${guaranter.MEMBER_TYPE}`)
             mem_TYPE = await this.jsonConverter(memTYPE);
           }
           let idmasterID
           if (ele.AC_CUSTID != null) {
-            let CUSTID = await connection2.execute(`select AC_NO from IDMASTER where AC_NO=${guaranter.AC_CUSTID}`)
+            let CUSTID = await this.connectionByOracle.execute(`select AC_NO from IDMASTER where AC_NO=${guaranter.AC_CUSTID}`)
             let IDMASTER = await this.jsonConverter(CUSTID);
             for (let eleme of IDMASTER) {
               idmasterID = (this.Postidmaster.find(idmaster => idmaster['ORA_AC_NO'] == eleme.AC_NO && idmaster['ORA_BRANCH'] == this.BRANCH_CODE))
@@ -7078,12 +7252,12 @@ export class MigrateService {
         }
 
         //COBORROWER
-        let coborrowerDeatils = await connection2.execute(`SELECT COBORROWER.*, schemast.S_APPL  from  COBORROWER left join schemast on COBORROWER.ac_type = schemast.s_appl where COBORROWER.AC_ACNOTYPE = '${ele.AC_ACNOTYPE}' AND COBORROWER.AC_TYPE = ${ele.AC_TYPE} AND COBORROWER.AC_NO = ${ele.AC_NO}`)
+        let coborrowerDeatils = await this.connectionByOracle.execute(`SELECT COBORROWER.*, schemast.S_APPL  from  COBORROWER left join schemast on COBORROWER.ac_type = schemast.s_appl where COBORROWER.AC_ACNOTYPE = '${ele.AC_ACNOTYPE}' AND COBORROWER.AC_TYPE = ${ele.AC_TYPE} AND COBORROWER.AC_NO = ${ele.AC_NO}`)
         let coborrower = await this.jsonConverter(coborrowerDeatils);
         for (let coborrow of coborrower) {
           let idmasterID
           if (ele.AC_CUSTID != null) {
-            let CUSTID = await connection2.execute(`select AC_NO from IDMASTER where AC_NO=${coborrow.AC_CUSTID}`)
+            let CUSTID = await this.connectionByOracle.execute(`select AC_NO from IDMASTER where AC_NO=${coborrow.AC_CUSTID}`)
             let IDMASTER = await this.jsonConverter(CUSTID);
             for (let eleme of IDMASTER) {
               idmasterID = (this.Postidmaster.find(idmaster => idmaster['ORA_AC_NO'] == eleme.AC_NO && idmaster['ORA_BRANCH'] == this.BRANCH_CODE))
@@ -7107,9 +7281,10 @@ export class MigrateService {
           // const coborr = queryRunner.manager.insert(COBORROWER, CoBorrower);
         }
         //LNACINTRATE
-        let lnacint = await connection2.execute(`SELECT * FROM LNACINTRATE WHERE AC_ACNOTYPE='${ele.AC_ACNOTYPE}' AND AC_TYPE= ${ele.AC_TYPE} AND AC_NO=${ele.AC_NO} order by serial_no`)
+        let lnacint = await this.connectionByOracle.execute(`SELECT * FROM LNACINTRATE WHERE AC_ACNOTYPE='${ele.AC_ACNOTYPE}' AND AC_TYPE= ${ele.AC_TYPE} AND AC_NO=${ele.AC_NO} order by serial_no`)
         // SELECT * FROM LNACINTRATE WHERE AC_ACNOTYPE='LN' AND AC_TYPE=70400 AND AC_NO=400266
         let lnaccountint = await this.jsonConverter(lnacint);
+        const lnacintrateRepo = await this.dataSourcePg.getRepository(LNACINTRATE);
         for (let ele of lnaccountint) {
 
           // let acno = String(ele.AC_NO).padStart(6, '0');
@@ -7126,15 +7301,16 @@ export class MigrateService {
           newObj['UPDATEFLAG'] = 1;
           newObj['LNMASTERID'] = LNAC.id;
           newObj['BANKACNO'] = BANKACNO;
-          await this.LNACINTRATEService.save(newObj);
+          //await this.LNACINTRATEService.save(newObj);
+          await lnacintrateRepo.save(newObj);
           // await queryRunner.manager.save(LNACINTRATE, newObj);
         }
       }
-      await connection2.close()
+      //await connection2.close()
       if (this.offset <= this.count && this.flag == 0) {
         this.offset = this.offset + 1000;
         // console.log(data[data.length - 1])
-        await queryRunner.commitTransaction();
+        // await queryRunner.commitTransaction();
         await this.lnmasterScript()
       } else if (this.flag == 1) {
         console.log('LNMASTER');
@@ -7144,28 +7320,29 @@ export class MigrateService {
       else if (this.flag == 0 && this.offset != 0) {
         this.offset = this.offset + 1000;
         this.flag = 1
-        await queryRunner.commitTransaction();
+        // await queryRunner.commitTransaction();
         console.log(data[data.length - 1])
         await this.lnmasterScript()
       }
 
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      // await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //RENEWALHISTORY
   async RENEWALHISTORY() {
 
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select renewalhistory.*, schemast.S_APPL as actype from renewalhistory left join schemast on renewalhistory.ac_type=schemast.s_appl`)
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select renewalhistory.*, schemast.S_APPL as actype from renewalhistory left join schemast on renewalhistory.ac_type=schemast.s_appl`)
     let data = await this.jsonConverter(result);
-    await connection2.close()
+    const renewalhistoryRepo = await this.dataSourcePg.getRepository(RENEWALHISTORY);
+    //await connection2.close()
     for (let ele of data) {
       let renew = new RENEWALHISTORY()
       let acno
@@ -7232,7 +7409,8 @@ export class MigrateService {
       renew['OLD_INT_CODE'] = ele.OLD_INT_CODE
       renew['OLD_INTEREST_DATE'] = ele.OLD_INTEREST_DATE == '' || ele.OLD_INTEREST_DATE == null ? null : moment(ele.OLD_INTEREST_DATE).format('DD/MM/YYYY');
       renew['TRAN_TYPE'] = ele.TRAN_TYPE
-      await this.RENEWALHISTORYService.insert(renew);
+      //await this.RENEWALHISTORYService.insert(renew);
+      await renewalhistoryRepo.save(renew);
     }
     console.log('RENEWALHISTORY')
 
@@ -7240,15 +7418,16 @@ export class MigrateService {
 
   //DIVPAIDTRAN
   async DIVPAIDTRAN() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`SELECT DIVPAIDTRAN.* , SCHEMAST.S_APPL AS ACTYPE 
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`SELECT DIVPAIDTRAN.* , SCHEMAST.S_APPL AS ACTYPE 
         FROM DIVPAIDTRAN LEFT JOIN SCHEMAST ON DIVPAIDTRAN.TRAN_ACTYPE=SCHEMAST.S_APPL`)
       let data = await this.jsonConverter(result);
-      await connection2.close()
+      const divpaidtranRepo = await this.dataSourcePg.getRepository(DIVPAIDTRAN);
+      //await connection2.close()
       for (let ele of data) {
         let schemastData = this.PostSchemast.filter(ele1 => ele1['AJARA_ACTYPE'] == ele.ACTYPE);
 
@@ -7297,23 +7476,24 @@ export class MigrateService {
         obj['USER_CODE'] = ele.USER_CODE
         obj['OFFICER_CODE'] = ele.OFFICER_CODE
         obj['BONUS_AMOUNT'] = ele.BONUS_AMOUNT
-        await queryRunner.manager.insert(DIVPAIDTRAN, obj);
+        // await queryRunner.manager.insert(DIVPAIDTRAN, obj);
+        await divpaidtranRepo.save(obj);
       }
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('DIVPAIDTRAN')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   // TRANSACTION - ACCOTRAN
   async ACCOTRAN() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from (
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from (
             select rownum offset, rs.* from (
               select ACCOTRAN.*, SCHEMAST.s_appl  from ACCOTRAN LEFT JOIN SCHEMAST ON ACCOTRAN.TRAN_ACTYPE= SCHEMAST.S_APPL 
               WHERE ACCOTRAN.TRAN_DATE > TO_DATE('27/12/2025','DD/MM/YYYY')
@@ -7323,10 +7503,11 @@ export class MigrateService {
             and offset > ${this.offset}
             `);
     var data = await this.jsonConverter(result);
+
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from ACCOTRAN WHERE ACCOTRAN.TRAN_DATE > TO_DATE('27/12/2025','DD/MM/YYYY')`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from ACCOTRAN WHERE ACCOTRAN.TRAN_DATE > TO_DATE('27/12/2025','DD/MM/YYYY')`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    // await connection2.close()
     this.count = result1[0].COUNT;
     await this.ACCOTRANSUB(data);
   }
@@ -7379,6 +7560,7 @@ export class MigrateService {
         engNarration = this.translatefullwords(marathiName)
 
       }
+      const accotranRepo = await this.dataSourcePg.getRepository(ACCOTRAN);
 
       let loanObj = new ACCOTRAN();
       loanObj['TRAN_NO'] = item.TRAN_NO;
@@ -7408,7 +7590,8 @@ export class MigrateService {
       loanObj['TRAN_ENTRY_TYPE'] = item.TRAN_ENTRY_TYPE;
       // loanObj['AC_NO'] = acmas[0].GL_SHEDGE
       loanObj['STATEMENT_DATE'] = item.STATEMENT_DATE == '' || item.STATEMENT_DATE == null ? null : moment(item.STATEMENT_DATE).format('DD/MM/YYYY');
-      await this.ACCOTRANService.save(loanObj);
+      //await this.ACCOTRANService.save(loanObj);
+      await accotranRepo.save(loanObj);
     }
     if (this.offset <= this.count && this.flag == 0) {
       this.offset = this.offset + 1000;
@@ -7426,8 +7609,8 @@ export class MigrateService {
   }
   //----------- DEPOTRAN
   async DEPOTRAN() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from (
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from (
       select rownum offset, rs.* from (
         select DEPOTRAN.*, SCHEMAST.S_APPL from DEPOTRAN LEFT JOIN SCHEMAST ON DEPOTRAN.TRAN_ACTYPE= SCHEMAST.S_APPL
         order by DEPOTRAN.REF_ID 
@@ -7439,9 +7622,9 @@ export class MigrateService {
     var data = await this.jsonConverter(result);
 
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from DEPOTRAN`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from DEPOTRAN`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    // await connection2.close()
     this.count = result1[0].COUNT;
     await this.DEPOTRANSUB(data);
   }
@@ -7493,6 +7676,7 @@ export class MigrateService {
 
       }
 
+      const depotranRepo = await this.dataSourcePg.getRepository(DEPOTRAN);
       let loanObj = new DEPOTRAN();
       loanObj['TRAN_NO'] = item.TRAN_NO;
       loanObj['SERIAL_NO'] = item.SERIAL_NO;
@@ -7540,7 +7724,8 @@ export class MigrateService {
       loanObj['IS_INTEREST_ENTRY'] = item.IS_INTEREST_ENTRY == 1 ? 1 : 0;
       loanObj['REF_ID'] = item.REF_ID
       console.log("REF_ID:", item.REF_ID)
-      await this.DEPOTRANService.insert(loanObj);
+      //await this.DEPOTRANService.insert(loanObj);
+      await depotranRepo.save(loanObj);
     }
     if (this.offset <= this.count && this.flag == 0) {
       this.offset = this.offset + 1000;
@@ -7559,8 +7744,8 @@ export class MigrateService {
 
   //loantran
   async LOANTRAN() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from (
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from (
       select rownum offset, rs.* from (
         select LOANTRAN.*, SCHEMAST.S_APPL AS ACTYPE from LOANTRAN
          LEFT JOIN SCHEMAST ON LOANTRAN.TRAN_ACTYPE= SCHEMAST.S_APPL
@@ -7571,9 +7756,9 @@ export class MigrateService {
     var data = await this.jsonConverter(result);
 
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from LOANTRAN`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from LOANTRAN`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    // await connection2.close()
     this.count = result1[0].COUNT;
     await this.LOANTRANSUB(data);
   }
@@ -7617,6 +7802,7 @@ export class MigrateService {
         engNarration = this.translatefullwords(marathiName)
 
       }
+      const loantranRepo = await this.dataSourcePg.getRepository(LOANTRAN);
 
       let loanObj = new LOANTRAN();
       loanObj['TRAN_NO'] = item.TRAN_NO;
@@ -7665,7 +7851,8 @@ export class MigrateService {
       loanObj['OTHER11_AMOUNT'] = item.OTHER11_AMOUNT == null ? 0 : item.OTHER11_AMOUNT;
       loanObj['IS_INTEREST_ENTRY'] = item.IS_INTEREST_ENTRY == 1 ? '1' : '0';
       //loanObj['OID'] = item.ID;
-      await this.LOANTRANService.insert(loanObj);
+      //await this.LOANTRANService.insert(loanObj);
+      await loantranRepo.save(loanObj);
     }
     if (this.offset <= this.count && this.flag == 0) {
       this.offset = this.offset + 1000;
@@ -7684,8 +7871,8 @@ export class MigrateService {
 
   // ------------------- PIGMYTRAN
   async PIGMYTRAN() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from (
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from (
       select rownum offset, rs.* from (
         select PIGMYTRAN.*, SCHEMAST.S_APPL from PIGMYTRAN
          LEFT JOIN SCHEMAST ON PIGMYTRAN.TRAN_ACTYPE= SCHEMAST.S_APPL
@@ -7696,9 +7883,9 @@ export class MigrateService {
       and offset > ${this.offset}`);
     var data = await this.jsonConverter(result);
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from PIGMYTRAN WHERE PIGMYTRAN.TRAN_DATE > TO_DATE('23-11-2025','DD/MM/YYYY')`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from PIGMYTRAN WHERE PIGMYTRAN.TRAN_DATE > TO_DATE('23-11-2025','DD/MM/YYYY')`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close();
+    // await connection2.close();
     this.count = result1[0].COUNT;
     await this.PIGMYTRANSUB(data);
   }
@@ -7751,6 +7938,7 @@ export class MigrateService {
 
       }
 
+      const pigmytranRepo = await this.dataSourcePg.getRepository(PIGMYTRAN);
 
       // let acno = Number(item.TRAN_ACNO) + 100000
       let acno = String(item.TRAN_ACNO).padStart(6, '0');
@@ -7812,7 +8000,8 @@ export class MigrateService {
       loanObj['AUTO_VOUCHER_DATE'] = item.AUTO_VOUCHER_DATE == '' || item.AUTO_VOUCHER_DATE == null ? null : moment(item.AUTO_VOUCHER_DATE).format('DD/MM/YYYY');
       loanObj['AUTO_VOUCHER_NO'] = item.AUTO_VOUCHER_NO == null ? 0 : item.AUTO_VOUCHER_NO;
       loanObj['AC_CLOSED'] = item.AC_CLOSED == 0 ? 0 : 1;
-      await this.pigmytran3Repository.save(loanObj);
+      //await this.pigmytran3Repository.save(loanObj);
+      await pigmytranRepo.save(loanObj);
     }
     if (this.offset <= this.count && this.flag == 0) {
       this.offset = this.offset + 1000;
@@ -7831,8 +8020,8 @@ export class MigrateService {
   }
   //----------------- SHARETRAN
   async SHARETRAN() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from (
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from (
       select rownum offset, rs.* from (
         select SHARETRAN.*, SCHEMAST.S_APPL from SHARETRAN LEFT JOIN SCHEMAST ON SHARETRAN.TRAN_ACTYPE= SCHEMAST.S_APPL
       order by SHARETRAN.TRAN_NO
@@ -7841,8 +8030,8 @@ export class MigrateService {
       and offset > ${this.offset}`);
     var data = await this.jsonConverter(result);
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from SHARETRAN`);
-    await connection2.close()
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from SHARETRAN`);
+    //await connection2.close()
     var result1 = await this.jsonConverter(datacount);
     this.count = result1[0].COUNT;
     await this.SHARETRANSUB(data);
@@ -7884,6 +8073,7 @@ export class MigrateService {
         engNarration = this.translatefullwords(marathiName)
 
       }
+      const sharetranRepo = await this.dataSourcePg.getRepository(SHARETRAN);
 
       let loanObj = new SHARETRAN();
       loanObj['TRAN_NO'] = item.TRAN_NO;
@@ -7927,7 +8117,8 @@ export class MigrateService {
       loanObj['OTHER2_AMOUNT'] = item.OTHER2_AMOUNT;
       loanObj['SH_CERTIFICATE_PRINTED'] = item.SH_CERTIFICATE_PRINTED;
       loanObj['NEW_DATE'] = item.NEW_DATE == '' || item.NEW_DATE == null ? null : moment(item.NEW_DATE).format('DD/MM/YYYY');
-      await this.SHARETRANService.insert(loanObj);
+      //await this.SHARETRANService.insert(loanObj);
+      await sharetranRepo.save(loanObj);
     }
     if (this.offset <= this.count && this.flag == 0) {
       this.offset = this.offset + 1000;
@@ -7946,8 +8137,8 @@ export class MigrateService {
   }
   //----------------- INTERESTTRAN
   async INTERESTTRAN() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from (
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from (
       select rownum offset, rs.* from (
         select INTERESTTRAN.*, SCHEMAST.S_APPL AS ACTYPE from INTERESTTRAN LEFT JOIN SCHEMAST ON INTERESTTRAN.TRAN_ACTYPE= SCHEMAST.S_APPL
         WHERE INTERESTTRAN.REF_ID > 9000
@@ -7957,21 +8148,22 @@ export class MigrateService {
       and offset > ${this.offset}`);
     var data = await this.jsonConverter(result);
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from INTERESTTRAN`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from INTERESTTRAN`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    //await connection2.close()
     this.count = result1[0].COUNT;
     await this.INTERESTTRANSUB(data);
   }
   async INTERESTTRANSUB(data) {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
       for (let item of data) {
         if (item.ACTYPE == null) {
           continue
         }
+        const interesttranRepo = await this.dataSourcePg.getRepository(INTERESTTRAN);
         let schemastData = this.PostSchemast.filter(ele => ele['AC_TYPE'] == item.ACTYPE);
         let acno = Number(item.TRAN_ACNO) + 100000
         let BANKACNO = this.PostSyspara[0].BANK_CODE + this.PostBranchOne[0].CODE + schemastData[0].S_APPL + acno
@@ -8051,7 +8243,8 @@ export class MigrateService {
         loanObj['TRAN_MODE'] = item.TRAN_MODE
         loanObj['REF_ID'] = item.REF_ID
         console.log(item.REF_ID)
-        await this.INTERESTTRANService.save(loanObj)
+        //await this.INTERESTTRANService.save(loanObj)
+        await interesttranRepo.save(loanObj);
         // await queryRunner.manager.save(INTERESTTRAN, loanObj);
       }
       if (this.offset <= this.count && this.flag == 0) {
@@ -8067,25 +8260,26 @@ export class MigrateService {
         this.flag = 1
         await this.INTERESTTRAN()
       }
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   async DIVIDEND() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select dividend.*, SCHEMAST.TYPEID AS ACTYPE1 from dividend LEFT JOIN SCHEMAST ON dividend.ACTYPE= SCHEMAST.S_APPL order by dividend.WARRENT_DATE')
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select dividend.*, SCHEMAST.TYPEID AS ACTYPE1 from dividend LEFT JOIN SCHEMAST ON dividend.ACTYPE= SCHEMAST.S_APPL order by dividend.WARRENT_DATE')
       let data = await this.jsonConverter(result);
-      await connection2.close()
+      const dividendRepo = await this.dataSourcePg.getRepository(DIVIDEND);
+      // await connection2.close()
       for (let item of data) {
         let obj = new DIVIDEND()
         let acno = Number(item.AC_NO) + 100000
@@ -8122,23 +8316,24 @@ export class MigrateService {
         obj['USER_CODE'] = item.USER_CODE
         obj['OFFICER_CODE'] = item.OFFICER_CODE
         obj['BONUS_AMOUNT'] = item.BONUS_AMOUNT
-        await queryRunner.manager.insert(DIVIDEND, obj)
+        //await queryRunner.manager.insert(DIVIDEND, obj)
+        await dividendRepo.save(obj);
       }
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('dividend')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   //------------- HISTORYDIVIDEND
   async HISTORYDIVIDEND() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from (
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from (
       select rownum offset, rs.* from (
         select HISTORYDIVIDEND.*, SCHEMAST.S_APPL AS ACTYPE1 from HISTORYDIVIDEND 
         LEFT JOIN SCHEMAST ON HISTORYDIVIDEND.ACTYPE= SCHEMAST.S_APPL
@@ -8148,9 +8343,9 @@ export class MigrateService {
       and offset > ${this.offset}`);
     var data = await this.jsonConverter(result);
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from HISTORYDIVIDEND`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from HISTORYDIVIDEND`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    //await connection2.close()
     this.count = result1[0].COUNT;
     await this.HISTORYDIVIDENDSUB(data);
   }
@@ -8160,6 +8355,7 @@ export class MigrateService {
       if (item.ACTYPE1 == null) {
         continue
       }
+      const historydividendRepo = this.dataSourcePg.getRepository(HISTORYDIVIDEND);
       let schemastData = this.PostSchemast.filter(ele => ele['AJARA_ACTYPE'] == item.ACTYPE);
 
       // let schemastData = this.PostSchemast.ACTYPE == item.ACTYPE1;
@@ -8193,7 +8389,8 @@ export class MigrateService {
       loanObj['BONUS_AMOUNT'] = item.BONUS_AMOUNT == null ? 0 : item.BONUS_AMOUNT;
       loanObj['DIV_FROM_YEAR'] = item.DIV_FROM_YEAR;
       loanObj['DIV_TO_YEAR'] = item.DIV_TO_YEAR;
-      await this.HISTORYDIVIDENDService.save(loanObj);
+      //await this.HISTORYDIVIDENDService.save(loanObj);
+      await historydividendRepo.save(loanObj);
     }
     if (this.offset <= this.count && this.flag == 0) {
       this.offset = this.offset + 1000;
@@ -8211,8 +8408,8 @@ export class MigrateService {
   }
   //------------- HISTORYTRAN
   async HISTORYTRAN() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from (
+   // let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from (
       select rownum offset, rs.* from (
         select HISTORYTRAN.*, SCHEMAST.S_APPL from HISTORYTRAN LEFT JOIN SCHEMAST 
         ON HISTORYTRAN.TRAN_ACTYPE= SCHEMAST.S_APPL
@@ -8222,9 +8419,10 @@ export class MigrateService {
       and offset > ${this.offset}
       `);
     var data = await this.jsonConverter(result);
+    // const historytranRepo = this.dataSourcePg.getRepository(HISTORYTRAN);
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from HISTORYTRAN `);
-    await connection2.close()
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from HISTORYTRAN `);
+    // await connection2.close()
     var result1 = await this.jsonConverter(datacount);
     this.count = result1[0].COUNT;
     await this.HISTORYTRANSUB(data);
@@ -8294,6 +8492,7 @@ export class MigrateService {
       }
 
 
+      const historytranRepo = this.dataSourcePg.getRepository(HISTORYTRAN);
       let loanObj = new HISTORYTRAN();
       loanObj['TRAN_NO'] = item.TRAN_NO;
       loanObj['SERIAL_NO'] = item.SERIAL_NO;
@@ -8399,7 +8598,8 @@ export class MigrateService {
       loanObj['TRANSFER_BRANCH'] = item.TRANSFER_BRANCH == 0 ? null : item.TRANSFER_BRANCH;
       loanObj['TRAN_MODE'] = item.TRAN_MODE;
       //loanObj['REF_ID'] = item.REF_ID;
-      await this.HISTORYTRANService.insert(loanObj);
+      //await this.HISTORYTRANService.insert(loanObj);
+      let scheme = await historytranRepo.insert(loanObj);
     }
     if (this.offset <= this.count && this.flag == 0) {
       this.offset = this.offset + 1000;
@@ -8418,18 +8618,21 @@ export class MigrateService {
   }
   //----------- DAILYTRAN
   async DAILYTRAN() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       // let result = await connection2.execute('select HISTORYTRAN.*, SCHEMAST.TYPEID AS ACTYPE from HISTORYTRAN LEFT JOIN SCHEMAST ON HISTORYTRAN.TRAN_ACTYPE= SCHEMAST.S_APPL order by HISTORYTRAN.TRAN_NO')
-      let result = await connection2.execute(`select dailytran.*, SCHEMAST.S_APPL AS ACTYPE from dailytran LEFT JOIN SCHEMAST ON dailytran.TRAN_ACTYPE= SCHEMAST.S_APPL
+      let result = await this.connectionByOracle.execute(`select dailytran.*, SCHEMAST.S_APPL AS ACTYPE from dailytran LEFT JOIN SCHEMAST ON dailytran.TRAN_ACTYPE= SCHEMAST.S_APPL
         WHERE dailytran.TRAN_NO > 57
         order by dailytran.TRAN_NO`)
+
+        
       //get maxcount of row
-      let datacount = await connection2.execute(`select count(*) as count from dailytran  WHERE dailytran.TRAN_NO > 57`);
-      await connection2.close()
+      let datacount = await this.connectionByOracle.execute(`select count(*) as count from dailytran  WHERE dailytran.TRAN_NO > 57`);
+      //await connection2.close()
+      const dailyTranRepo = this.dataSourcePg.getRepository(DAILYTRAN);
       var result1 = await this.jsonConverter(datacount);
       this.count = result1[0].COUNT;
       let data = await this.jsonConverter(result);
@@ -8581,30 +8784,32 @@ export class MigrateService {
         loanObj['TRANSFER_BRANCH'] = item.TRANSFER_BRANCH == 0 ? null : item.TRANSFER_BRANCH;
         loanObj['TRAN_MODE'] = item.TRAN_MODE;
 
-        await this.DAILYTRANService.save(loanObj)
+        //await this.DAILYTRANService.save(loanObj)
+        await dailyTranRepo.save(loanObj)
         // await queryRunner.manager.save(DAILYTRAN, loanObj);
       }
-      await queryRunner.commitTransaction();
-      await connection2.close()
-      console.log('Dailytran');
+      // await queryRunner.commitTransaction();
+      // await connection2.close()
+      //console.log('Dailytran');
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   async AGENTCHANGEHISTORY() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select AGENTCHANGEHISTORY.*, SCHEMAST.TYPEID AS ACTYPE from AGENTCHANGEHISTORY LEFT JOIN SCHEMAST ON AGENTCHANGEHISTORY.AC_TYPE= SCHEMAST.S_APPL  order by AGENTCHANGEHISTORY.change_date')
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select AGENTCHANGEHISTORY.*, SCHEMAST.TYPEID AS ACTYPE from AGENTCHANGEHISTORY LEFT JOIN SCHEMAST ON AGENTCHANGEHISTORY.AC_TYPE= SCHEMAST.S_APPL  order by AGENTCHANGEHISTORY.change_date')
       let data = await this.jsonConverter(result);
-      await connection2.close()
+      const agentchangehistoryRepo = this.dataSourcePg.getRepository(AGENTCHANGEHISTORY);
+      //await connection2.close()
       for (let item of data) {
         if (item.ACTYPE == null) {
           continue
@@ -8612,7 +8817,7 @@ export class MigrateService {
         let AGENT_ACTYPE = null
         let agentschemastData = null
         if (item.AGENT_ACTYPE != null) {
-          let AGENTTYPE = await connection2.execute(`select TYPEID from schemast where S_APPL=${item.AGENT_ACTYPE}`)
+          let AGENTTYPE = await this.connectionByOracle.execute(`select TYPEID from schemast where S_APPL=${item.AGENT_ACTYPE}`)
           AGENT_ACTYPE = await this.jsonConverter(AGENTTYPE);
           agentschemastData = this.PostSchemast.filter(ele => ele['id'] == AGENT_ACTYPE[0].TYPEID);
         }
@@ -8638,17 +8843,18 @@ export class MigrateService {
         else if (item.TRAN_STATUS == 'RJ') {
           obj['TRAN_STATUS'] = '2'
         }
-        await queryRunner.manager.insert(AGENTCHANGEHISTORY, obj)
+        //await queryRunner.manager.insert(AGENTCHANGEHISTORY, obj)
+        await agentchangehistoryRepo.save(obj);
       }
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('AGENTCHANGEHISTORY');
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   async BANKBRANCHMASTER() {
@@ -8784,14 +8990,15 @@ export class MigrateService {
     }
   }
   async BATCHVOUCHERTRAN() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from BATCHVOUCHERTRAN')
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from BATCHVOUCHERTRAN')
       let data = await this.jsonConverter(result);
-      await connection2.close()
+      const batchvouchertranRepo = this.dataSourcePg.getRepository(BATCHVOUCHERTRAN);
+      //await connection2.close()
       for (let item of data) {
         let obj = new BATCHVOUCHERTRAN()
         obj['TRAN_NO'] = item.TRAN_NO
@@ -8814,17 +9021,18 @@ export class MigrateService {
         obj['CHEQUE_SERIES'] = null
         obj['CHEQUE_NO'] = item.CHEQUE_NO
         obj['FILE_IMPORT'] = 0
-        await queryRunner.manager.insert(BATCHVOUCHERTRAN, obj)
+        //await queryRunner.manager.insert(BATCHVOUCHERTRAN, obj)
+        await batchvouchertranRepo.save(obj)
       }
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('BATCHVOUCHERTRAN')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   async BUDGETMASTER() {
@@ -9021,10 +9229,11 @@ export class MigrateService {
   }
   async DAILYSHRTRAN() {
 
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute('select DAILYSHRTRAN.*, SCHEMAST.S_APPL AS ACTYPE from DAILYSHRTRAN LEFT JOIN SCHEMAST ON DAILYSHRTRAN.TRAN_ACTYPE= SCHEMAST.S_APPL order by DAILYSHRTRAN.TRAN_NO')
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute('select DAILYSHRTRAN.*, SCHEMAST.S_APPL AS ACTYPE from DAILYSHRTRAN LEFT JOIN SCHEMAST ON DAILYSHRTRAN.TRAN_ACTYPE= SCHEMAST.S_APPL order by DAILYSHRTRAN.TRAN_NO')
     let data = await this.jsonConverter(result);
-    await connection2.close()
+    const dailyshrtranRepo = this.dataSourcePg.getrepository(DAILYSHRTRAN);
+    //await connection2.close()
     for (let item of data) {
       if (item.ACTYPE == null) {
         continue
@@ -9100,7 +9309,8 @@ export class MigrateService {
       obj['IS_AUTO_TRF_ENTRY'] = item.IS_AUTO_TRF_ENTRY
       obj['TRAN_SOURCE_NO'] = item.TRAN_SOURCE_NO
       obj['SH_CERTIFICATE_PRINTED'] = item.SH_CERTIFICATE_PRINTED == 0 ? 0 : 1
-      await this.DAILYSHRTRANService.insert(obj)
+      //await this.DAILYSHRTRANService.insert(obj)
+      await dailyshrtranRepo.save(obj)
     }
     console.log('DAILYSHRTRAN')
 
@@ -9162,31 +9372,33 @@ export class MigrateService {
     }
   }
   async CRARTRAN() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from CRARTRAN ORDER BY TRAN_DATE')
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from CRARTRAN ORDER BY TRAN_DATE')
       let data = await this.jsonConverter(result);
-      await connection2.close()
+      const crartranRepo = this.dataSourcePg.getRepository(CRARTRAN);
+      //await connection2.close()
       for (let item of data) {
         let obj = new CRARTRAN()
         obj['TRAN_DATE'] = item.TRAN_DATE == '' || item.TRAN_DATE == null ? null : moment(item.TRAN_DATE).format('DD/MM/YYYY');
         obj['REPORT_TYPE'] = item.REPORT_TYPE
         obj['TRAN_CRARCODE'] = item.TRAN_CRARCODE
         obj['TRAN_AMOUNT'] = item.TRAN_AMOUNT
-        await queryRunner.manager.insert(CRARTRAN, obj)
+        //await queryRunner.manager.insert(CRARTRAN, obj)
+        await crartranRepo.save(obj)
       }
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('CRARTRAN')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   async DENOMINATION() {
@@ -9407,8 +9619,8 @@ export class MigrateService {
     }
   }
   async INTHISTORYTRAN() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from (
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from (
       select rownum offset, rs.* from (
         select INTHISTORYTRAN.*, SCHEMAST.S_APPL from INTHISTORYTRAN LEFT JOIN SCHEMAST ON INTHISTORYTRAN.TRAN_ACTYPE= SCHEMAST.S_APPL order by INTHISTORYTRAN.TRAN_DATE
      ) rs
@@ -9418,8 +9630,8 @@ export class MigrateService {
       `);
     var data = await this.jsonConverter(result);
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from INTHISTORYTRAN`);
-    await connection2.close()
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from INTHISTORYTRAN`);
+    //await connection2.close()
     var result1 = await this.jsonConverter(datacount);
     this.count = result1[0].COUNT;
     await this.INTHISTORYTRANSUB(data);
@@ -9455,6 +9667,8 @@ export class MigrateService {
 
         engNarration = this.translatefullwords(marathiName)
       }
+
+      const inthistorytranRepo = this.dataSourcePg.getRepository(INTHISTORYTRAN);
 
       let schemastData = this.PostSchemast.filter(ele => ele['AJARA_ACTYPE'] == item.TRAN_ACTYPE);
       // let acno = Number(item.TRAN_ACNO) + 100000
@@ -9514,7 +9728,8 @@ export class MigrateService {
       obj['REC_PENAL_INT_AMOUNT'] = item.REC_PENAL_INT_AMOUNT == null || item.REC_PENAL_INT_AMOUNT == undefined ? 0 : item.REC_PENAL_INT_AMOUNT
       obj['REC_PENAL_INT_GLACNO'] = item.REC_PENAL_INT_GLACNO == null || item.REC_PENAL_INT_GLACNO == undefined ? 0 : item.REC_PENAL_INT_GLACNO
       obj['RECPENAL_INT_OPENING'] = item.RECPENAL_INT_OPENING == null || item.RECPENAL_INT_OPENING == undefined ? 0 : item.RECPENAL_INT_OPENING
-      await this.INTHISTORYTRANService.insert(obj)
+      //await this.INTHISTORYTRANService.insert(obj)
+      await inthistorytranRepo.save(obj)
     }
     if (this.offset <= this.count && this.flag == 0) {
       this.offset = this.offset + 1000;
@@ -9534,14 +9749,15 @@ export class MigrateService {
 
   }
   async TDSTRAN() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(' select TDSTRAN.*, SCHEMAST.TYPEID AS ACTYPE from TDSTRAN LEFT JOIN SCHEMAST ON TDSTRAN.AC_TYPE = SCHEMAST.S_APPL order by TDSTRAN.TRAN_DATE')
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(' select TDSTRAN.*, SCHEMAST.TYPEID AS ACTYPE from TDSTRAN LEFT JOIN SCHEMAST ON TDSTRAN.AC_TYPE = SCHEMAST.S_APPL order by TDSTRAN.TRAN_DATE')
       let data = await this.jsonConverter(result);
-      await connection2.close()
+      const tdstranRepo = this.dataSourcePg.getRepository(TDSTRAN);
+      //await connection2.close()
       for (let item of data) {
         let obj = new TDSTRAN()
         obj['TRAN_DATE'] = item.TRAN_DATE == '' || item.TRAN_DATE == null ? null : moment(item.TRAN_DATE).format('DD/MM/YYYY')
@@ -9568,28 +9784,30 @@ export class MigrateService {
           obj['TRAN_STATUS'] = '2'
         }
         obj['USER_CODE'] = item.USER_CODE
-        await queryRunner.manager.insert(TDSTRAN, obj)
+        //await queryRunner.manager.insert(TDSTRAN, obj)
+        await tdstranRepo.save(obj)
       }
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('TDSTRAN')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   async OIRTRAN() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(' select OIRTRAN.*, SCHEMAST.TYPEID AS ACTYPE from OIRTRAN LEFT JOIN SCHEMAST ON OIRTRAN.TRAN_ACTYPE = SCHEMAST.S_APPL order by OIRTRAN.TRAN_DATE')
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(' select OIRTRAN.*, SCHEMAST.TYPEID AS ACTYPE from OIRTRAN LEFT JOIN SCHEMAST ON OIRTRAN.TRAN_ACTYPE = SCHEMAST.S_APPL order by OIRTRAN.TRAN_DATE')
       let data = await this.jsonConverter(result);
-      await connection2.close()
+      const oirtranRepo = this.dataSourcePg.getRepository(OIRTRAN);
+      //await connection2.close()
       for (let item of data) {
         if (item.ACTYPE == null) {
           continue
@@ -9620,28 +9838,30 @@ export class MigrateService {
         obj['OVERDUE_AMOUNT'] = item.OVERDUE_AMOUNT
         obj['DUE_INSTALLMENT'] = item.DUE_INSTALLMENT
         obj['NPA_DATE'] = item.NPA_DATE == '' || item.NPA_DATE == null ? null : moment(item.NPA_DATE).format('DD/MM/YYYY')
-        await queryRunner.manager.insert(OIRTRAN, obj)
+        //await queryRunner.manager.insert(OIRTRAN, obj)
+        await oirtranRepo.save(obj)
       }
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('OIRTRAN')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   async RECOTRAN() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(' select RECOTRAN.*, SCHEMAST.TYPEID AS ACTYPE from RECOTRAN LEFT JOIN SCHEMAST ON RECOTRAN.TRAN_ACTYPE = SCHEMAST.S_APPL order by RECOTRAN.TRAN_DATE')
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(' select RECOTRAN.*, SCHEMAST.TYPEID AS ACTYPE from RECOTRAN LEFT JOIN SCHEMAST ON RECOTRAN.TRAN_ACTYPE = SCHEMAST.S_APPL order by RECOTRAN.TRAN_DATE')
       let data = await this.jsonConverter(result);
-      await connection2.close()
+      const recotranRepo = this.dataSourcePg.getRepository(RECOTRAN);
+      //await connection2.close()
       for (let item of data) {
         if (item.ACTYPE == null) {
           continue
@@ -9666,28 +9886,30 @@ export class MigrateService {
         obj['NARRATION'] = item.NARRATION?.replace("\x00", "")
         obj['CHEQUE_NO'] = item.CHEQUE_NO
         obj['STATEMENT_DATE'] = item.STATEMENT_DATE == '' || item.STATEMENT_DATE == null ? null : moment(item.STATEMENT_DATE).format('DD/MM/YYYY')
-        await queryRunner.manager.insert(RECOTRAN, obj)
+        //await queryRunner.manager.insert(RECOTRAN, obj)
+        await recotranRepo.save(obj)
       }
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('RECOTRAN')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   async TDRECEIPTISSUE() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(' select TDRECEIPTISSUE.*, SCHEMAST.S_APPL AS ACTYPE from TDRECEIPTISSUE LEFT JOIN SCHEMAST ON TDRECEIPTISSUE.AC_TYPE = SCHEMAST.S_APPL order by TDRECEIPTISSUE.PRINT_DATE')
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(' select TDRECEIPTISSUE.*, SCHEMAST.S_APPL AS ACTYPE from TDRECEIPTISSUE LEFT JOIN SCHEMAST ON TDRECEIPTISSUE.AC_TYPE = SCHEMAST.S_APPL order by TDRECEIPTISSUE.PRINT_DATE')
       let data = await this.jsonConverter(result);
-      await connection2.close()
+      const tdreceiptissueRepo = this.dataSourcePg.getRepository(TDRECEIPTISSUE);
+      //await connection2.close()
       for (let item of data) {
         if (item.ACTYPE == null) {
           continue
@@ -9706,24 +9928,26 @@ export class MigrateService {
         obj['RECEIPT_NO'] = item.RECEIPT_NO
         obj['REASON_OF_DUPLICATE'] = item.REASON_OF_DUPLICATE
         obj['USER_CODE'] = item.USER_CODE
-        await queryRunner.manager.insert(TDRECEIPTISSUE, obj)
+        //await queryRunner.manager.insert(TDRECEIPTISSUE, obj)
+        await tdreceiptissueRepo.save(obj)
       }
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('TDRECEIPTISSUE')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+     //await queryRunner.release();
     }
   }
   async NPADATA() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute('select NPADATA.*, SCHEMAST.S_APPL AS ACTYPE from NPADATA LEFT JOIN SCHEMAST ON NPADATA.AC_TYPE = SCHEMAST.S_APPL order by NPADATA.REPORT_DATE')
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute('select NPADATA.*, SCHEMAST.S_APPL AS ACTYPE from NPADATA LEFT JOIN SCHEMAST ON NPADATA.AC_TYPE = SCHEMAST.S_APPL order by NPADATA.REPORT_DATE')
     let data = await this.jsonConverter(result);
-    await connection2.close()
+    const npadataRepo = this.dataSourcePg.getRepository(NPADATA);
+    //await connection2.close()
     for (let item of data) {
       if (item.ACTYPE == null) {
         continue
@@ -9764,19 +9988,21 @@ export class MigrateService {
       obj['CURRENT_INTEREST'] = item.CURRENT_INTEREST == null ? 0 : item.CURRENT_INTEREST
       obj['AC_INSTALLMENT'] = item.AC_INSTALLMENT == null ? 0 : item.AC_INSTALLMENT
       obj['AMT_TOBE_RECOVER'] = item.AMT_TOBE_RECOVER == null ? 0 : item.AMT_TOBE_RECOVER
-      await this.NPADATAService.insert(obj)
+      //await this.NPADATAService.insert(obj)
+      await npadataRepo.save(obj)
     }
     console.log('NPADATA')
   }
   async MORATORIUMPERIOD() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(' select MORATORIUMPERIOD.*, SCHEMAST.TYPEID AS ACTYPE from MORATORIUMPERIOD LEFT JOIN SCHEMAST ON MORATORIUMPERIOD.AC_TYPE = SCHEMAST.S_APPL order by MORATORIUMPERIOD.TRAN_DATE')
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(' select MORATORIUMPERIOD.*, SCHEMAST.TYPEID AS ACTYPE from MORATORIUMPERIOD LEFT JOIN SCHEMAST ON MORATORIUMPERIOD.AC_TYPE = SCHEMAST.S_APPL order by MORATORIUMPERIOD.TRAN_DATE')
       let data = await this.jsonConverter(result);
-      await connection2.close()
+      const moratoriumperiodRepo = this.dataSourcePg.getRepository(MORATORIUMPERIOD);
+      //await connection2.close()
       for (let item of data) {
         if (item.ACTYPE == null) {
           continue
@@ -9794,24 +10020,26 @@ export class MigrateService {
         obj['AC_RESO_DATE'] = item.AC_RESO_DATE == '' || item.AC_RESO_DATE == null ? null : moment(item.AC_RESO_DATE).format('DD/MM/YYYY')
         obj['AC_RESO_NO'] = item.AC_RESO_NO
         obj['BRANCH_CODE'] = this.BRANCH_CODE
-        await queryRunner.manager.insert(MORATORIUMPERIOD, obj)
+        //await queryRunner.manager.insert(MORATORIUMPERIOD, obj)
+        await moratoriumperiodRepo.save(obj)
       }
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('MORATORIUMPERIOD')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   async STANDINSTRUCTIONLOG() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute('select * from STANDINSTRUCTIONLOG order by TRAN_DATE')
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute('select * from STANDINSTRUCTIONLOG order by TRAN_DATE')
     let data = await this.jsonConverter(result);
-    await connection2.close()
+    const standinstructionlogRepo = this.dataSourcePg.getRepository(STANDINSTRUCTIONLOG);
+    //await connection2.close()
     for (let item of data) {
       let obj = new STANDINSTRUCTIONLOG()
       obj['TRAN_DATE'] = item.TRAN_DATE == '' || item.TRAN_DATE == null ? null : moment(item.TRAN_DATE).format('DD/MM/YYYY')
@@ -9828,24 +10056,26 @@ export class MigrateService {
       obj['PAYINT_AMOUNT'] = item.PAYINT_AMOUNT
       obj['OTHER9_AMOUNT'] = item.OTHER9_AMOUNT
       obj['PENAL_INT_AMOUNT'] = item.PENAL_INT_AMOUNT
-      await this.STANDINSTRUCTIONLOGService.insert(obj)
+      //await this.STANDINSTRUCTIONLOGService.insert(obj)
+      await standinstructionlogRepo.save(obj)
     }
     console.log('STANDINSTRUCTIONLOG')
   }
   async INTINSTRUCTIONSLOG() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from INTINSTRUCTIONSLOG order by REF_ID ASC`)
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from INTINSTRUCTIONSLOG order by REF_ID ASC`)
     let data = await this.jsonConverter(result);
+    const intinstructionslogRepo = this.dataSourcePg.getRepository(INTINSTRUCTIONSLOG);
 
     for (let item of data) {
       let CR_ACTYPE = null
       if (item.CR_ACTYPE != null) {
-        let memTYPE = await connection2.execute(`select S_APPL from schemast where S_APPL=${item.CR_ACTYPE}`)
+        let memTYPE = await this.connectionByOracle.execute(`select S_APPL from schemast where S_APPL=${item.CR_ACTYPE}`)
         CR_ACTYPE = await this.jsonConverter(memTYPE);
       }
       let DR_ACTYPE = null
       if (item.DR_ACTYPE != null) {
-        let memTYPE = await connection2.execute(`select S_APPL from schemast where S_APPL=${item.DR_ACTYPE}`)
+        let memTYPE = await this.connectionByOracle.execute(`select S_APPL from schemast where S_APPL=${item.DR_ACTYPE}`)
         DR_ACTYPE = await this.jsonConverter(memTYPE);
       }
       let drschemastData = DR_ACTYPE != null ? await this.SCHEMASTService.find({
@@ -9884,16 +10114,18 @@ export class MigrateService {
       obj['CR_AC_NO'] = CR_ACTYPE == null ? null : crBANKACNO
       obj['REF_ID'] = item.REF_ID
       console.log('REF_ID:', item.REF_ID)
-      await this.INTINSTRUCTIONSLOGService.insert(obj)
+      //await this.INTINSTRUCTIONSLOGService.insert(obj)
+      await intinstructionslogRepo.save(obj)
     }
-    await connection2.close()
+    //await connection2.close()
     console.log('INTINSTRUCTIONSLOG')
   }
   async PASSBOOKPRINT() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute('select * from PASSBOOKPRINT order by PASSBOOKPRINT.TRAN_DATE')
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute('select * from PASSBOOKPRINT order by PASSBOOKPRINT.TRAN_DATE')
     let data = await this.jsonConverter(result);
-    await connection2.close()
+    const passbookprintRepo = this.dataSourcePg.getRepository(PASSBOOKPRINT);
+    //await connection2.close()
     for (let item of data) {
       if (item.AC_TYPE == null || item.AC_TYPE == ' ') {
         continue
@@ -9917,16 +10149,18 @@ export class MigrateService {
       obj['CR_AMOUNT'] = item.CR_AMOUNT == null ? 0 : item.CR_AMOUNT
       obj['OTHER_AMOUNT'] = item.OTHER_AMOUNT == null ? 0 : item.OTHER_AMOUNT
       obj['OTHER_DRCR'] = item.OTHER_DRCR
-      await this.PASSBOOKPRINTService.insert(obj)
+      //await this.PASSBOOKPRINTService.insert(obj)
+      await passbookprintRepo.save(obj)
     }
     console.log('PASSBOOKPRINT')
 
   }
   async PASSBOOKHISTORY() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute('select * from PASSBOOKHISTORY order by PASSBOOKHISTORY.LAST_PRINT_DATE')
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute('select * from PASSBOOKHISTORY order by PASSBOOKHISTORY.LAST_PRINT_DATE')
     let data = await this.jsonConverter(result);
-    await connection2.close()
+    const passbookhistoryRepo = this.dataSourcePg.getRepository(PASSBOOKHISTORY);
+    //await connection2.close()
     for (let item of data) {
       if (item.AC_TYPE == null) {
         continue
@@ -9940,39 +10174,43 @@ export class MigrateService {
       obj['AC_NO'] = BANKACNO
       obj['LAST_PRINT_DATE'] = item.LAST_PRINT_DATE == '' || item.LAST_PRINT_DATE == null ? null : moment(item.LAST_PRINT_DATE).format('DD/MM/YYYY')
       obj['LAST_PRINT_TRANNO'] = item.LAST_PRINT_TRANNO
-      await this.PASSBOOKHISTORYService.insert(obj)
+      //await this.PASSBOOKHISTORYService.insert(obj)
+      await passbookhistoryRepo.save(obj)
     }
     console.log('PASSBOOKHISTORY')
   }
   async SUBSIDARYMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from SUBSIDARYMASTER order by code')
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from SUBSIDARYMASTER order by code')
       let data = await this.jsonConverter(result);
-      await connection2.close()
+      const subsidarymasterRepo = this.dataSourcePg.getRepository(SUBSIDARYMASTER);
+      //await connection2.close()
       for (let item of data) {
         let obj = new SUBSIDARYMASTER()
         obj['NAME'] = item.NAME
-        await queryRunner.manager.insert(SUBSIDARYMASTER, obj)
+        //await queryRunner.manager.insert(SUBSIDARYMASTER, obj)
+        await subsidarymasterRepo.save(obj)
       }
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('SUBSIDARYMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   async DEADSTOCKHEADER() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute('select DEADSTOCKHEADER.*, SCHEMAST.S_APPL AS ACTYPE from DEADSTOCKHEADER LEFT JOIN SCHEMAST ON DEADSTOCKHEADER.TRANSFER_ACTYPE = SCHEMAST.S_APPL order by DEADSTOCKHEADER.TRAN_DATE,DEADSTOCKHEADER.TRAN_NO')
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute('select DEADSTOCKHEADER.*, SCHEMAST.S_APPL AS ACTYPE from DEADSTOCKHEADER LEFT JOIN SCHEMAST ON DEADSTOCKHEADER.TRANSFER_ACTYPE = SCHEMAST.S_APPL order by DEADSTOCKHEADER.TRAN_DATE,DEADSTOCKHEADER.TRAN_NO')
     let data = await this.jsonConverter(result);
+    const deadstockheaderRepo = this.dataSourcePg.getRepository(DEADSTOCKHEADER);
     for (let item of data) {
       let date = item.TRAN_DATE == '' || item.TRAN_DATE == null ? null : moment(item.TRAN_DATE).format('DD/MM/YYYY')
       let obj = new DEADSTOCKHEADER()
@@ -10017,9 +10255,11 @@ export class MigrateService {
         obj['TRAN_STATUS'] = 2
       }
       obj['status'] = 1
-      let header = await this.DEADSTOCKHEADERService.save(obj)
-      let detail = await connection2.execute(`select * from deadstockdetail where tran_date=TO_DATE('${date}','DD/MM/YYYY') and tran_no=${item.TRAN_NO} order by serial_no`)
+      //let header = await this.DEADSTOCKHEADERService.save(obj)
+      let header = await deadstockheaderRepo.save(obj)
+      let detail = await this.connectionByOracle.execute(`select * from deadstockdetail where tran_date=TO_DATE('${date}','DD/MM/YYYY') and tran_no=${item.TRAN_NO} order by serial_no`)
       let resultDetail = await this.jsonConverter(detail);
+      const deadstockdetailRepo = this.dataSourcePg.getRepository(DEADSTOCKDETAIL);
       for (let ele of resultDetail) {
         let itemmasterData = await this.ITEMMASTERService.findOne({ ITEM_CODE: ele.ITEM_CODE })
         let details = new DEADSTOCKDETAIL()
@@ -10038,16 +10278,17 @@ export class MigrateService {
         details['DEPR_RATE'] = ele.DEPR_RATE
         details['BRANCH_CODE'] = this.BRANCH_CODE
         details['deadstockHeader'] = header.id
-        await this.DEADSTOCKDETAILService.insert(details)
+        //await this.DEADSTOCKDETAILService.insert(details)
+        await deadstockdetailRepo.save(details)
       }
     }
-    await connection2.close()
+    //await connection2.close()
     console.log('DEADSTOCKHEADER-DEADSTOCKDETAIL')
 
   }
   async DEPOCLOSETRAN() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from (
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from (
       select rownum offset, rs.* from (
         select DEPOCLOSETRAN.*, SCHEMAST.S_APPL AS ACTYPE from 
         DEPOCLOSETRAN LEFT JOIN SCHEMAST ON DEPOCLOSETRAN.TRAN_ACTYPE= SCHEMAST.S_APPL
@@ -10057,8 +10298,8 @@ export class MigrateService {
       and offset > ${this.offset}`);
     var data = await this.jsonConverter(result);
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from DEPOCLOSETRAN`);
-    await connection2.close()
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from DEPOCLOSETRAN`);
+    //await connection2.close()
     var result1 = await this.jsonConverter(datacount);
     this.count = result1[0].COUNT;
     await this.DEPOCLOSETRANSUB(data);
@@ -10096,7 +10337,7 @@ export class MigrateService {
         engNarration = this.translatefullwords(marathiName)
       }
 
-
+      const depoclosetranRepo = this.dataSourcePg.getRepository(DEPOCLOSETRAN);
       // let acno = Number(ele.TRAN_ACNO) + 100000
       let acno = String(ele.TRAN_ACNO).padStart(6, '0');
       let BANKACNO = this.PostSyspara[0].BANK_CODE + this.PostBranchOne[0].CODE + schemastData[0].S_APPL + acno
@@ -10148,7 +10389,8 @@ export class MigrateService {
       obj['CHEQUE_DATE'] = ele.CHEQUE_DATE == '' || ele.CHEQUE_DATE == null ? null : moment(ele.CHEQUE_DATE).format('DD/MM/YYYY')
       obj['SYSCHNG_LOGIN'] = ele.OFFICER_CODE
       obj['status'] = 1
-      let depoclose = await this.DEPOCLOSETRANService.save(obj)
+      l//et depoclose = await this.DEPOCLOSETRANService.save(obj)
+      let depoclose = await depoclosetranRepo.save(obj)
       if (ele.TRAN_TYPE == 'TR') {
         let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
         let detail = await connection2.execute(`select DEPOCLOSETRANSAC.*, SCHEMAST.S_APPL AS ACTYPE from DEPOCLOSETRANSAC LEFT JOIN SCHEMAST ON DEPOCLOSETRANSAC.TRANSFER_ACTYPE= SCHEMAST.S_APPL
@@ -10178,6 +10420,7 @@ export class MigrateService {
             engNarration = this.translatefullwords(marathiName)
           }
 
+          const depoclosetransaceRepo = this.dataSourcePg.getRepository(DEPOCLOSETRANSAC);
           // let acno = Number(item.TRANSFER_ACNO) + 100000
           let acno = String(item.TRANSFER_ACNO).padStart(6, '0');
           let BANKACNO = this.PostSyspara[0].BANK_CODE + this.PostBranchOne[0].CODE + schemastData[0].S_APPL + acno
@@ -10197,9 +10440,10 @@ export class MigrateService {
           details['INTEREST_AMOUNT'] = item.INTEREST_AMOUNT
           details['AC_CLOSED'] = item.AC_CLOSED == 0 ? 0 : 1
           details['depoclosetran'] = depoclose.id
-          await this.DEPOCLOSETRANSACService.insert(details)
+          //await this.DEPOCLOSETRANSACService.insert(details)
+          await depoclosetransaceRepo.save(details)
         }
-        await connection2.close()
+        //await connection2.close()
       }
     }
     if (this.offset <= this.count && this.flag == 0) {
@@ -10218,43 +10462,46 @@ export class MigrateService {
   }
 
   async SHARECAPITALAMTDETAILS() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from SHARE_CAPITAL_AMT_DETAILS order by FROM_DATE')
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from SHARE_CAPITAL_AMT_DETAILS order by FROM_DATE')
       let data = await this.jsonConverter(result);
-      await connection2.close()
+      const sharecapitalamtdetailsRepo = this.dataSourcePg.getRepository(SHARECAPITALAMTDETAILS);
+      //await connection2.close()
       for (let item of data) {
         let obj = new SHARECAPITALAMTDETAILS()
         obj['FROM_DATE'] = item.FROM_DATE == '' || item.FROM_DATE == null ? null : moment(item.FROM_DATE).format('DD/MM/YYYY')
         obj['TO_DATE'] = item.TO_DATE == '' || item.TO_DATE == null ? null : moment(item.TO_DATE).format('DD/MM/YYYY')
         obj['AMOUNT'] = item.AMOUNT
         obj['SYSID'] = this.PostSyspara[0].id
-        await queryRunner.manager.insert(SHARECAPITALAMTDETAILS, obj)
+        //await queryRunner.manager.insert(SHARECAPITALAMTDETAILS, obj)
+        await sharecapitalamtdetailsRepo.save(obj)
       }
 
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('SHARECAPITALAMTDETAILS')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   async MANAGERVIEW() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from MANAGERVIEW order by SR_NO')
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from MANAGERVIEW order by SR_NO')
       let data = await this.jsonConverter(result);
-      await connection2.close()
+      const managerviewRepo = this.dataSourcePg.getRepository(MANAGERVIEW);
+      //await connection2.close()
       for (let item of data) {
         let obj = new MANAGERVIEW()
         obj['TYPE '] = item.TYPE
@@ -10262,29 +10509,31 @@ export class MigrateService {
         obj['DECRIPTION '] = item.DECRIPTION
         obj['IS_DISPLAY'] = item.IS_DISPLAY == 0 ? '0' : '1'
         obj['PERCENTAGE_TO_WORKING_CAPITAL'] = item.PERCENTAGE_TO_WORKING_CAPITAL0 ? '0' : '1'
-        await queryRunner.manager.insert(MANAGERVIEW, obj)
+        //await queryRunner.manager.insert(MANAGERVIEW, obj)
+        await managerviewRepo.save(obj)
       }
 
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('MANAGERVIEW')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   async GLREPORTLINK() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(' select GLREPORTLINK.*, SCHEMAST.S_APPL AS ACTYPE from GLREPORTLINK LEFT JOIN SCHEMAST ON GLREPORTLINK.AC_TYPE= SCHEMAST.S_APPL order by GLREPORTLINK.CODE')
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(' select GLREPORTLINK.*, SCHEMAST.S_APPL AS ACTYPE from GLREPORTLINK LEFT JOIN SCHEMAST ON GLREPORTLINK.AC_TYPE= SCHEMAST.S_APPL order by GLREPORTLINK.CODE')
       let data = await this.jsonConverter(result);
-      await connection2.close()
+      const glreportlinkRepo = this.dataSourcePg.getRepository(GLREPORTLINK);
+      //await connection2.close()
       for (let item of data) {
         let obj = new GLREPORTLINK()
         obj['REPORT_TYPE'] = item.REPORT_TYPE
@@ -10299,29 +10548,31 @@ export class MigrateService {
         obj['REVERSE_CODE'] = item.REVERSE_CODE
         obj['DEFAULT_BALTYPE'] = item.DEFAULT_BALTYPE
         obj['EFFECT_TO_DATE'] = item.EFFECT_TO_DATE == '' || item.EFFECT_TO_DATE == null ? null : moment(item.EFFECT_TO_DATE).format('DD/MM/YYYY')
-        await queryRunner.manager.insert(GLREPORTLINK, obj)
+        //await queryRunner.manager.insert(GLREPORTLINK, obj)
+        await glreportlinkRepo.save(obj)
       }
 
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('GLREPORTLINK')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   async GLREPORTMASTER() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM GLREPORTMASTER ORDER BY REF_ID')
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM GLREPORTMASTER ORDER BY REF_ID')
       let data = await this.jsonConverter(result);
-      await connection2.close()
+      const glreportmasterRepo = this.dataSourcePg.getRepository(GLREPORTMASTER);
+      //await connection2.close()
       for (let item of data) {
         let obj = new GLREPORTMASTER()
         obj['CODE'] = item.CODE
@@ -10354,29 +10605,31 @@ export class MigrateService {
         obj['PRINT_AT_OUTER'] = item.PRINT_AT_OUTER
         obj['REF_ID'] = item.REF_ID
         obj['ALTERNATE_BALANCE_CODE'] = item.ALTERNATE_BALANCE_CODE
-        await queryRunner.manager.insert(GLREPORTMASTER, obj)
+        //await queryRunner.manager.insert(GLREPORTMASTER, obj)
+        await glreportmasterRepo.save(obj)
       }
 
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('GLREPORTMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   async LOCKERTRAN() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select LOCKERTRAN.*, SCHEMAST.TYPEID AS ACTYPE from LOCKERTRAN LEFT JOIN SCHEMAST ON LOCKERTRAN.TRAN_ACTYPE= SCHEMAST.S_APPL  order by LOCKERTRAN.TRAN_NO')
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select LOCKERTRAN.*, SCHEMAST.TYPEID AS ACTYPE from LOCKERTRAN LEFT JOIN SCHEMAST ON LOCKERTRAN.TRAN_ACTYPE= SCHEMAST.S_APPL  order by LOCKERTRAN.TRAN_NO')
       let data = await this.jsonConverter(result);
-      await connection2.close()
+      const lockertranRepo = this.dataSourcePg.getRepository(LOCKERTRAN);
+      //await connection2.close()
       for (let item of data) {
         if (item.ACTYPE == null) {
           continue
@@ -10410,29 +10663,31 @@ export class MigrateService {
           obj['TRAN_STATUS'] = '2'
         }
         obj['BRANCH_CODE'] = this.BRANCH_CODE
-        await queryRunner.manager.insert(LOCKERTRAN, obj)
+        //await queryRunner.manager.insert(LOCKERTRAN, obj)
+        await lockertranRepo.save(obj)
       }
 
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('LOCKERTRAN')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   async LOCKERRENTTRAN() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select LOCKERRENTTRAN.*, SCHEMAST.TYPEID AS ACTYPE from LOCKERRENTTRAN LEFT JOIN SCHEMAST ON LOCKERRENTTRAN.TRAN_ACTYPE= SCHEMAST.S_APPL  order by LOCKERRENTTRAN.TRAN_NO')
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select LOCKERRENTTRAN.*, SCHEMAST.TYPEID AS ACTYPE from LOCKERRENTTRAN LEFT JOIN SCHEMAST ON LOCKERRENTTRAN.TRAN_ACTYPE= SCHEMAST.S_APPL  order by LOCKERRENTTRAN.TRAN_NO')
       let data = await this.jsonConverter(result);
-      await connection2.close()
+      const lockerrenttranRepo = this.dataSourcePg.getRepository(LOCKERRENTTRAN);
+      //await connection2.close()
       for (let item of data) {
         if (item.ACTYPE == null) {
           continue
@@ -10482,29 +10737,31 @@ export class MigrateService {
         obj['TRF_ACNO'] = agentBANKACNO
         obj['AC_CLOSED'] = item.AC_CLOSED == 0 ? 0 : 1
         obj['TRAN_ENTRY_TYPE'] = item.TRAN_ENTRY_TYPE
-        await queryRunner.manager.insert(LOCKERRENTTRAN, obj)
+        //await queryRunner.manager.insert(LOCKERRENTTRAN, obj)
+        await lockerrenttranRepo.save(obj)
       }
 
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('LOCKERRENTTRAN')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+     // await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   async PIGMYCHART() {
 
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select DISTINCT PIGMYCHART.AGENT_ACTYPE,PIGMYCHART.AGENT_ACNO,TRAN_DATE from PIGMYCHART`);
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select DISTINCT PIGMYCHART.AGENT_ACTYPE,PIGMYCHART.AGENT_ACNO,TRAN_DATE from PIGMYCHART`);
     var data = await this.jsonConverter(result);
-    let pgmasterdata = await this.PGMASTERService.find()
+    const pigmychartRepo = this.dataSourcePg.getRepository(PIGMYCHART);
+    let pgmasterdata = await pigmychartRepo.find()
     for (let item of data) {
       let date = item.TRAN_DATE == '' || item.TRAN_DATE == null ? null : moment(item.TRAN_DATE).format('DD/MM/YYYY')
-      let pigmychartdata = await connection2.execute(`SELECT PIGMYCHART.*,SCHEMAST.S_APPL as ACTYPE FROM PIGMYCHART  LEFT JOIN SCHEMAST ON PIGMYCHART.AGENT_ACTYPE= SCHEMAST.S_APPL  where AGENT_ACTYPE=${item.AGENT_ACTYPE} AND AGENT_ACNO=${item.AGENT_ACNO} AND TRAN_DATE=TO_DATE('${date}','DD/MM/YYYY') AND ROWNUM =1`);
+      let pigmychartdata = await this.connectionByOracle.execute(`SELECT PIGMYCHART.*,SCHEMAST.S_APPL as ACTYPE FROM PIGMYCHART  LEFT JOIN SCHEMAST ON PIGMYCHART.AGENT_ACTYPE= SCHEMAST.S_APPL  where AGENT_ACTYPE=${item.AGENT_ACTYPE} AND AGENT_ACNO=${item.AGENT_ACNO} AND TRAN_DATE=TO_DATE('${date}','DD/MM/YYYY') AND ROWNUM =1`);
       let pigmychart = await this.jsonConverter(pigmychartdata);
       if (pigmychart[0].ACTYPE == null) {
         continue
@@ -10544,10 +10801,10 @@ export class MigrateService {
         pigmy['AUTO_VOUCHER_NO'] = pigmychart[0].AUTO_VOUCHER_NO
         pigmy['CHART_NO'] = pigmychart[0].CHART_NO
         pigmy['BRANCH_CODE'] = this.BRANCH_CODE
-        let pigmychartInsert = await this.PIGMYCHARTService.save(pigmy)
-        let pigmychartmasterdata = await connection2.execute(`SELECT PIGMYCHART.*,SCHEMAST.S_APPL as ACTYPE FROM PIGMYCHART  LEFT JOIN SCHEMAST ON PIGMYCHART.TRAN_ACTYPE= SCHEMAST.S_APPL  where AGENT_ACTYPE=${item.AGENT_ACTYPE} AND AGENT_ACNO=${item.AGENT_ACNO} AND TRAN_DATE=TO_DATE('${date}','DD/MM/YYYY') order by PIGMYCHART.SERIAL_NO`);
+        let pigmychartInsert = await pigmychartRepo.save(pigmy)
+        let pigmychartmasterdata = await this.connectionByOracle.execute(`SELECT PIGMYCHART.*,SCHEMAST.S_APPL as ACTYPE FROM PIGMYCHART  LEFT JOIN SCHEMAST ON PIGMYCHART.TRAN_ACTYPE= SCHEMAST.S_APPL  where AGENT_ACTYPE=${item.AGENT_ACTYPE} AND AGENT_ACNO=${item.AGENT_ACNO} AND TRAN_DATE=TO_DATE('${date}','DD/MM/YYYY') order by PIGMYCHART.SERIAL_NO`);
         let pigmychartmaster = await this.jsonConverter(pigmychartmasterdata);
-        let totalAmount = await connection2.execute(`SELECT sum(TRAN_AMOUNT) AS AMOUNT FROM PIGMYCHART  where AGENT_ACTYPE=${item.AGENT_ACTYPE} AND AGENT_ACNO=${item.AGENT_ACNO} AND TRAN_DATE=TO_DATE('${date}','DD/MM/YYYY')`);
+        let totalAmount = await this.connectionByOracle.execute(`SELECT sum(TRAN_AMOUNT) AS AMOUNT FROM PIGMYCHART  where AGENT_ACTYPE=${item.AGENT_ACTYPE} AND AGENT_ACNO=${item.AGENT_ACNO} AND TRAN_DATE=TO_DATE('${date}','DD/MM/YYYY')`);
         let getAmount = await this.jsonConverter(totalAmount);
         let updateAmount = await this.PIGMYCHARTService.update(pigmychartInsert.id, { TRAN_AMOUNT: getAmount[0].AMOUNT })
         for (let ele of pigmychartmaster) {
@@ -10572,19 +10829,20 @@ export class MigrateService {
         }
       }
     }
-    await connection2.close()
+    //await connection2.close()
     console.log('PIGMYCHART')
   }
   async custdocument() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
       let fileExt = 'jpeg'
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`SELECT  SIGN.* FROM SIGN inner join  idmaster
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`SELECT  SIGN.* FROM SIGN inner join  idmaster
          on  SIGN.ac_no =  idmaster.ac_no`);
       var data = await this.jsonConverter(result);
+      const custdocumentRepo = this.dataSourcePg.getRepository(CUSTDOCUMENT);
       for (let ele of data) {
         const blobsToProcess = [
           { blobData: ele.PHOTO, prefix: 'PHOTO' },
@@ -10650,7 +10908,8 @@ export class MigrateService {
           custDocument['PATH'] = file_path
           custDocument['idmasterID'] = idmasterID.id
           custDocument['DocumentMasterID'] = 1
-          const doc = queryRunner.manager.insert(CUSTDOCUMENT, custDocument)
+          //const doc = queryRunner.manager.insert(CUSTDOCUMENT, custDocument)
+          const doc = custdocumentRepo.save(custDocument)
         }
         if (ele.SIGN1 != null) {
           let blobData = ele.SIGN1;
@@ -10661,7 +10920,8 @@ export class MigrateService {
           custDocument['PATH'] = file_path
           custDocument['idmasterID'] = idmasterID.id
           custDocument['DocumentMasterID'] = 2
-          const doc = queryRunner.manager.insert(CUSTDOCUMENT, custDocument)
+          //const doc = queryRunner.manager.insert(CUSTDOCUMENT, custDocument)
+          const doc = custdocumentRepo.save(custDocument)
         }
         if (ele.SIGN2 != null) {
           let blobData = ele.SIGN2;
@@ -10672,7 +10932,8 @@ export class MigrateService {
           custDocument['PATH'] = file_path
           custDocument['idmasterID'] = idmasterID.id
           custDocument['DocumentMasterID'] = 20
-          const doc = queryRunner.manager.insert(CUSTDOCUMENT, custDocument)
+          //const doc = queryRunner.manager.insert(CUSTDOCUMENT, custDocument)
+          const doc = custdocumentRepo.save(custDocument)
         }
         if (ele.SIGN3 != null) {
           let blobData = ele.SIGN3;
@@ -10683,7 +10944,8 @@ export class MigrateService {
           custDocument['PATH'] = file_path
           custDocument['idmasterID'] = idmasterID.id
           custDocument['DocumentMasterID'] = 21
-          const doc = queryRunner.manager.insert(CUSTDOCUMENT, custDocument)
+          //const doc = queryRunner.manager.insert(CUSTDOCUMENT, custDocument)
+          const doc = custdocumentRepo.save(custDocument)
         }
         if (ele.SIGN4 != null) {
           let blobData = ele.SIGN4;
@@ -10694,51 +10956,54 @@ export class MigrateService {
           custDocument['PATH'] = file_path
           custDocument['idmasterID'] = idmasterID.id
           custDocument['DocumentMasterID'] = 3
-          const doc = queryRunner.manager.insert(CUSTDOCUMENT, custDocument)
+          //const doc = queryRunner.manager.insert(CUSTDOCUMENT, custDocument)
+           const doc = custdocumentRepo.save(custDocument)
         }
       }
 
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('SIGN COMPLETED')
       return 0
 
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
 
 
   }
   async SMSMAST() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('select * from smsmast')
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('select * from smsmast')
       let data = await this.jsonConverter(result);
-      await connection2.close()
+      const smsmastRepo = this.dataSourcePg.getRepository(SMSMAST);
+      //await connection2.close()
       for (let ele of data) {
         let sms = new SMSMAST()
         sms['SMS_ID'] = ele.SMS_ID
         sms['TEMPLATE_ID'] = ele.TEMPLATE_ID
         sms['TEMPLATE_CONTENT'] = ele.TEMPLATE_CONTENT
-        let savetemp = await queryRunner.manager.insert(SMSMAST, sms)
+        //let savetemp = await queryRunner.manager.insert(SMSMAST, sms)
+        let savetemp = await smsmastRepo.save(sms)
       }
 
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('SMSMAST')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   changedate
@@ -10787,8 +11052,8 @@ export class MigrateService {
 
   }
   async IDMASTERwithselect() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from (
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from (
       select rownum offset, rs.* from (
         SELECT IDMASTER.*, OCCUPATIONMASTER.CODE AS OCCUPATION, CASTMASTER.CODE AS CASTMASTER ,RISKCATEGORYMASTER.CODE AS RISKCATEGORYMASTER FROM IDMASTER LEFT JOIN OCCUPATIONMASTER ON IDMASTER.AC_OCODE=OCCUPATIONMASTER.CODE LEFT JOIN CASTMASTER ON IDMASTER.AC_CAST= CASTMASTER.CODE LEFT JOIN RISKCATEGORYMASTER ON IDMASTER.AC_RISKCATG = RISKCATEGORYMASTER.CODE  where IDMASTER.AC_NO > 50 ORDER BY IDMASTER.AC_NO
      ) rs
@@ -10796,23 +11061,24 @@ export class MigrateService {
       and offset > ${this.offset}`);
     let data = await this.jsonConverter(result);
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from IDMASTER  where IDMASTER.AC_NO > 50`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from IDMASTER  where IDMASTER.AC_NO > 50`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    //await connection2.close()
     this.count = result1[0].COUNT;
     await this.IDMASTERWITHLIMIT(data);
   }
 
   async ITEMMASTERselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute('SELECT * FROM ITEMMASTER where ITEM_CODE >10 order by ITEM_CODE');
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute('SELECT * FROM ITEMMASTER where ITEM_CODE >10 order by ITEM_CODE');
       let data = await this.jsonConverter(result);
-      let pgData = await this.ITEMMASTERService.find()
-      let itemcategory = await connection2.execute('SELECT NAME FROM ITEMCATEGORY');
+      const itemmasterRepo = this.dataSourcePg.getRepository(ITEMMASTER);
+      let pgData = await itemmasterRepo.find()
+      let itemcategory = await this.connectionByOracle.execute('SELECT NAME FROM ITEMCATEGORY');
       let itemcategorydata = await this.jsonConverter(itemcategory);
       let postItemcategory = await this.ITEMCATEGORYMASTERService.find()
       if (pgData.length == 0) {
@@ -10842,7 +11108,8 @@ export class MigrateService {
           newObj['LAST_UNLOCK_DATE'] = ele.LAST_UNLOCK_DATE == null ? null : moment(ele.LAST_UNLOCK_DATE).format('DD/MM/YYYY');
           newObj['BRANCH_CODE'] = this.BRANCH_CODE;
           newObj['SYSCHNG_LOGIN'] = ele.OFFICER_CODE
-          await queryRunner.manager.save(ITEMMASTER, newObj);
+          //await queryRunner.manager.save(ITEMMASTER, newObj);
+          await itemmasterRepo.save(newObj);
         }
       }
       else {
@@ -10875,26 +11142,27 @@ export class MigrateService {
             newObj['PURCHASE_QUANTITY'] = ele.PURCHASE_QUANTITY;
             newObj['LAST_UNLOCK_DATE'] = ele.LAST_UNLOCK_DATE == null ? null : moment(ele.LAST_UNLOCK_DATE).format('DD/MM/YYYY');
             newObj['BRANCH_CODE'] = this.BRANCH_CODE;
-            await queryRunner.manager.save(ITEMMASTER, newObj);
+            //await queryRunner.manager.save(ITEMMASTER, newObj);
+            await itemmasterRepo.save(newObj);
           }
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      //await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('ITEMMASTER')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   async SHmasterScriptselect() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(
       `select * from (
             select rownum offset, rs.* from (
               SELECT SHMASTER.*,  
@@ -10913,15 +11181,15 @@ export class MigrateService {
     var data = await this.jsonConverter(result);
 
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from SHMASTER  where AC_OPDATE > '${this.changedate}'`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from SHMASTER  where AC_OPDATE > '${this.changedate}'`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    //await connection2.close()
     this.count = result1[0].COUNT;
     await this.SHMASTERSCRIPTWITHLIMIT(data);
   }
   async DPMASTERScriptselect() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(
       `select * from (
             select rownum offset, rs.* from (
               SELECT DPMASTER.*, SCHEMAST.TYPEID AS AC_TYPE1         
@@ -10933,16 +11201,16 @@ export class MigrateService {
     var data = await this.jsonConverter(result);
 
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from DPMASTER where AC_OPDATE >'${this.changedate}'`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from DPMASTER where AC_OPDATE >'${this.changedate}'`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    //await connection2.close()
     this.count = result1[0].COUNT;
     await this.DPMASTERSCRIPTWITHLIMIT(data);
   }
 
   async PGmasterScriptselect() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(
       `select * from (
             select rownum offset, rs.* from (
               SELECT PGMASTER.*,  CATEGORYMASTER.CODE AS ACCATG ,  SCHEMAST.TYPEID AS AC_TYPE1 ,
@@ -10959,15 +11227,15 @@ export class MigrateService {
     var data = await this.jsonConverter(result);
 
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from PGMASTER WHERE AC_OPDATE >'${this.changedate}'`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from PGMASTER WHERE AC_OPDATE >'${this.changedate}'`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    //await connection2.close()
     this.count = result1[0].COUNT;
     await this.PGMASTERSCRIPTWITHLIMIT(data);
   }
   async lnmasterScriptselect() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from (
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from (
             select rownum offset, rs.* from (
                SELECT LNMASTER.*,  SCHEMAST.TYPEID AS AC_TYPE1  from LNMASTER  
                LEFT JOIN SCHEMAST ON LNMASTER.AC_TYPE= SCHEMAST.S_APPL where AC_OPDATE > '${this.changedate}'  ORDER BY LNMASTER.AC_NO
@@ -10977,23 +11245,24 @@ export class MigrateService {
     var data = await this.jsonConverter(result);
 
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from LNMASTER where AC_OPDATE > '${this.changedate}'`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from LNMASTER where AC_OPDATE > '${this.changedate}'`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    //await connection2.close()
     this.count = result1[0].COUNT;
     await this.LNMASTERSCRIPTWITHLIMIT(data);
   }
 
   //STOCKSTATEMENT
   async STOCKSTATEMENTselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`SELECT STOCKSTATEMENT.*,schemast.typeid as actype  FROM STOCKSTATEMENT left join schemast on STOCKSTATEMENT.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`SELECT STOCKSTATEMENT.*,schemast.typeid as actype  FROM STOCKSTATEMENT left join schemast on STOCKSTATEMENT.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const stockstatementselectRepo = this.dataSourcePg.getRepository(this.STOCKSTATEMENTselect) 
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -11027,32 +11296,34 @@ export class MigrateService {
           obj['FINISHED_MARGIN'] = ele.FINISHED_MARGIN
           obj['REMARK'] = ele.REMARK
           obj['SECURITY_TYPE'] = ele.SECURITY_TYPE
-          let insertObj = await queryRunner.manager.insert(STOCKSTATEMENT, obj)
+          //let insertObj = await queryRunner.manager.insert(STOCKSTATEMENT, obj)
+          let insertObj = await stockstatementselectRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      //await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('STOCKSTATEMENT')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //VEHICLE
   async VEHICLEselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select  VEHICLE.*,schemast.typeid as actype from VEHICLE left join schemast on VEHICLE.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select  VEHICLE.*,schemast.typeid as actype from VEHICLE left join schemast on VEHICLE.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const vehicleselectRepo = this.dataSourcePg.getRepository(this.VEHICLEselect);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -11090,32 +11361,34 @@ export class MigrateService {
           obj['SUPPLIER_NAME'] = ele.SUPPLIER_NAME
           obj['PURCHASE_PRICE'] = ele.PURCHASE_PRICE
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(VEHICLE, obj)
+          //let insertObj = await queryRunner.manager.insert(VEHICLE, obj)
+          let inseryObj = await vehicleselectRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      //await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('vehicle')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //PLEDGESTOCK
   async PLEDGESTOCKselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select  PLEDGESTOCK.*,schemast.typeid as actype from PLEDGESTOCK left join schemast on PLEDGESTOCK.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
+      l//et connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select  PLEDGESTOCK.*,schemast.typeid as actype from PLEDGESTOCK left join schemast on PLEDGESTOCK.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const pledgestockselectRepo = this.dataSourcePg.getRepository(this.PLEDGESTOCKselect);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -11151,32 +11424,34 @@ export class MigrateService {
           obj['RATE'] = ele.RATE
           obj['VALUE'] = ele.VALUE
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(PLEDGESTOCK, obj)
+          //let insertObj = await queryRunner.manager.insert(PLEDGESTOCK, obj)
+          let insertObj = await pledgestockselectRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      //await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('pledestock')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //PLANTMACHINARY
   async PLANTMACHINARYselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select  PLANTMACHINARY.*,schemast.typeid as actype from PLANTMACHINARY left join schemast on PLANTMACHINARY.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select  PLANTMACHINARY.*,schemast.typeid as actype from PLANTMACHINARY left join schemast on PLANTMACHINARY.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const plantmachinaryselectRepo = this.dataSourcePg.getRepository(this.PLANTMACHINARYselect);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -11212,32 +11487,34 @@ export class MigrateService {
           obj['REMARK'] = ele.REMARK
           obj['SECURITY_TYPE'] = ele.SECURITY_TYPE
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(PLANTMACHINARY, obj)
+          //let insertObj = await queryRunner.manager.insert(PLANTMACHINARY, obj)
+          let insertObj = await plantmachinaryselectRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('plantmachinary')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //OWNDEPOSIT
   async OWNDEPOSITselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select  OWNDEPOSIT.*,schemast.typeid as actype from OWNDEPOSIT left join schemast on OWNDEPOSIT.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select  OWNDEPOSIT.*,schemast.typeid as actype from OWNDEPOSIT left join schemast on OWNDEPOSIT.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const owndepositselectRepo = this.dataSourcePg.getRepository(this.OWNDEPOSITselect);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -11274,32 +11551,34 @@ export class MigrateService {
           obj['IS_LIEN_MARK_CLEAR'] = ele.IS_LIEN_MARK_CLEAR
           obj['BALANCE_OF_LOAN_ACCOUNT'] = ele.BALANCE_OF_LOAN_ACCOUNT
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(OWNDEPOSIT, obj)
+          //let insertObj = await queryRunner.manager.insert(OWNDEPOSIT, obj)
+          let insertObj= await owndepositselectRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('owndeposit')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //OTHERSECURITY
   async OTHERSECURITYselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select  OTHERSECURITY.*,schemast.typeid as actype from OTHERSECURITY left join schemast on OTHERSECURITY.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select  OTHERSECURITY.*,schemast.typeid as actype from OTHERSECURITY left join schemast on OTHERSECURITY.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const othersecurityselectRepo = this.dataSourcePg.getRepsoitory(this.OTHERSECURITYselect);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -11331,32 +11610,34 @@ export class MigrateService {
           obj['TOTAL_VALUE'] = ele.TOTAL_VALUE
           obj['DETAILS'] = ele.DETAILS
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(OTHERSECURITY, obj)
+          //let insertObj = await queryRunner.manager.insert(OTHERSECURITY, obj)
+          let insertObj = await othersecurityselectRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('othersecurity')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //MARKETSHARE
   async MARKETSHAREselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select  MARKETSHARE.*,schemast.typeid as actype from MARKETSHARE left join schemast on MARKETSHARE.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select  MARKETSHARE.*,schemast.typeid as actype from MARKETSHARE left join schemast on MARKETSHARE.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const marketshareselectRepo = this.dataSourcePg.getRepsitory(this.MARKETSHAREselect);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -11390,32 +11671,34 @@ export class MigrateService {
           obj['UPDATED_BY'] = ele.UPDATED_BY
           obj['RELEASE_BY'] = ele.RELEASE_BY
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(MARKETSHARE, obj)
+          //let insertObj = await queryRunner.manager.insert(MARKETSHARE, obj)
+          let insertObj = await marketshareselectRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('marketshare')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //LANDBUILDING
   async LANDBUILDINGselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select  LANDBUILDING.*,schemast.typeid as actype from LANDBUILDING left join schemast on LANDBUILDING.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select  LANDBUILDING.*,schemast.typeid as actype from LANDBUILDING left join schemast on LANDBUILDING.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const landbuildingselectRepo = this.dataSourcePg.getRepository(this.LANDBUILDINGselect);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -11454,32 +11737,34 @@ export class MigrateService {
           obj['CITY_SURVEY_NO'] = ele.CITY_SURVEY_NO
           obj['REG_NO'] = ele.REG_NO
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(LANDBUILDING, obj)
+          //let insertObj = await queryRunner.manager.insert(LANDBUILDING, obj)
+          let inseryObj = await landbuildingselectRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('landbuilding')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //GOLDSILVER
   async GOLDSILVERselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select  GOLDSILVER.*,schemast.typeid as actype from GOLDSILVER left join schemast on GOLDSILVER.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select  GOLDSILVER.*,schemast.typeid as actype from GOLDSILVER left join schemast on GOLDSILVER.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const goldsilverselectRepo = this.dataSourcePg.getRepository(this.GOLDSILVERselect);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -11521,32 +11806,34 @@ export class MigrateService {
           obj['USER_CODE'] = ele.USER_CODE
           obj['OFFICER_CODE'] = ele.OFFICER_CODE
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(GOLDSILVER, obj)
+          //let insertObj = await queryRunner.manager.insert(GOLDSILVER, obj)
+          let insertObj = await goldsilverselectRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('goldsilver')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //FURNITURE
   async FURNITUREselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select  FURNITURE.*,schemast.typeid as actype from FURNITURE left join schemast on FURNITURE.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select  FURNITURE.*,schemast.typeid as actype from FURNITURE left join schemast on FURNITURE.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const furnitureselectRepo = this.dataSourcePg.getRepository(this.FURNITUREselect);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -11581,32 +11868,34 @@ export class MigrateService {
           obj['REMARK'] = ele.REMARK
           obj['SECURITY_TYPE'] = ele.SECURITY_TYPE
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(FURNITURE, obj)
+          //let insertObj = await queryRunner.manager.insert(FURNITURE, obj)
+          let insertObj =  await furnitureselectRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      //await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('furniture')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //FIREPOLICY
   async FIREPOLICYselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select  FIREPOLICY.*,schemast.typeid as actype from FIREPOLICY left join schemast on FIREPOLICY.ac_type=schemast.s_appl  where SUBMISSION_DATE > '${this.changedate}'`);
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select  FIREPOLICY.*,schemast.typeid as actype from FIREPOLICY left join schemast on FIREPOLICY.ac_type=schemast.s_appl  where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const firepolicyRepo = this.dataSourcePg.getRepository(this.FIREPOLICYselect);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -11640,19 +11929,20 @@ export class MigrateService {
           obj['CITY'] = ele.CITY
           obj['BRANCH_CODE'] = this.BRANCH_CODE
           obj['SECU_CODE'] = secuCode?.id
-          let insertObj = await queryRunner.manager.insert(FIREPOLICY, obj)
+          //let insertObj = await queryRunner.manager.insert(FIREPOLICY, obj)
+          let insertObj = await firepolicyRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      //await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('firepolicy')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
@@ -12051,8 +12341,8 @@ export class MigrateService {
   }
 
   async HISTORYTRANselect() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from (
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from (
       select rownum offset, rs.* from (
         select HISTORYTRAN.*, SCHEMAST.TYPEID AS ACTYPE from HISTORYTRAN LEFT JOIN SCHEMAST ON HISTORYTRAN.TRAN_ACTYPE= SCHEMAST.S_APPL where TRAN_DATE > '${this.changedate}'
         order by HISTORYTRAN.TRAN_NO  
@@ -12061,25 +12351,26 @@ export class MigrateService {
       and offset > ${this.offset}`);
     var data = await this.jsonConverter(result);
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from HISTORYTRAN where TRAN_DATE > '${this.changedate}'`);
-    await connection2.close()
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from HISTORYTRAN where TRAN_DATE > '${this.changedate}'`);
+    //await connection2.close()
     var result1 = await this.jsonConverter(datacount);
     this.count = result1[0].COUNT;
     await this.HISTORYTRANSUB(data);
   }
   async ACCOTRANselect() {
-    let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-    let result = await connection2.execute(`select * from (
+    //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+    let result = await this.connectionByOracle.execute(`select * from (
             select rownum offset, rs.* from (
               select ACCOTRAN.*, SCHEMAST.TYPEID AS ACTYPE from ACCOTRAN LEFT JOIN SCHEMAST ON ACCOTRAN.TRAN_ACTYPE= SCHEMAST.S_APPL WHERE TRAN_DATE='${this.changedate}' order by ACCOTRAN.TRAN_NO 
            ) rs
         ) where rownum <= ${this.limit}
             and offset > ${this.offset}`);
     var data = await this.jsonConverter(result);
+    const accotranselectRepo = this.dataSourcePg.getRepository(this.ACCOTRANselect);
     //get maxcount of row
-    let datacount = await connection2.execute(`select count(*) as count from ACCOTRAN WHERE TRAN_DATE='${this.changedate}'`);
+    let datacount = await this.connectionByOracle.execute(`select count(*) as count from ACCOTRAN WHERE TRAN_DATE='${this.changedate}'`);
     var result1 = await this.jsonConverter(datacount);
-    await connection2.close()
+    //await connection2.close()
     this.count = result1[0].COUNT;
     await this.ACCOTRANSUB(data);
   }
@@ -12992,45 +13283,102 @@ export class MigrateService {
 
 
   // //method that counts the rows of oracle and postgres and return if they are in sync or not
-  async getSyncStatus(tableName: string, dependencies: string[]): Promise<{ isSynced: boolean, mismatched: string[] }> {
-    let connection = await oracledb.getConnection({
-      user: this.user,
-      password: this.password,
-      connectString: this.connectionString
-    });
+  // async getSyncStatus(tableName: string, dependencies: string[]): Promise<{ isSynced: boolean, mismatched: string[] }> {
+  //   const connection = await oracledb.getConnection({
+  //     user: this.user,
+  //     password: this.password,
+  //     connectString: this.connectionString
+  //     // user: oracleConfig.username,
+  //     // password: oracleConfig.password,
+  //     // connectString: `(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=${oracleConfig.host})(PORT=${oracleConfig.port}))(CONNECT_DATA=(SERVICE_NAME=${oracleConfig.database})))`
+  //   });
 
-    let mismatched: string[] = [];
+  //   let mismatched: string[] = [];
 
-    for (let dep of dependencies) {
-      // 1. Get Oracle count
-      const oracleResult = await connection.execute(`SELECT COUNT(*) as cnt FROM ${dep}`);
-      const oracleCount = oracleResult.rows[0][0];
+  //   for (let dep of dependencies) {
+  //     // 1. Get Oracle count
+  //     const oracleResult = await connection.execute(`SELECT COUNT(*) as cnt FROM ${dep}`);
+  //     const oracleCount = oracleResult.rows[0][0];
 
-      // 2. Get Postgres count (assuming you have access to the service for the dependency)
-      // You might need to inject the repository for the dependency table or use a helper
-      const pgCount = await this.connection.getRepository(dep).count();
+  //     // 2. Get Postgres count (assuming you have access to the service for the dependency)
+  //     // You might need to inject the repository for the dependency table or use a helper
+  //     const pgCount = await this.connection.getRepository(dep).count();
+
+  //     if (oracleCount !== pgCount) {
+  //       mismatched.push(dep);
+  //     }
+  //   }
+
+  //   await connection.close();
+  //   return {
+  //     isSynced: mismatched.length === 0,
+  //     mismatched: mismatched
+  //   };
+  // }
+  async getSyncStatus(
+  tableName: string,
+  dependencies: string[],
+  oracleConfig: any
+): Promise<{ isSynced: boolean; mismatched: string[] }> {
+
+  const connection = await oracledb.getConnection({
+    user: oracleConfig.username,
+    password: oracleConfig.password,
+    connectString: `(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=${oracleConfig.host})(PORT=${oracleConfig.port}))(CONNECT_DATA=(SERVICE_NAME=${oracleConfig.database})))`
+  });
+
+  try {
+
+    const mismatched: string[] = [];
+
+    for (const dep of dependencies) {
+
+      const oracleResult = await connection.execute(
+        `SELECT COUNT(*) FROM ${dep}`
+      );
+
+      const oracleCount = Number(oracleResult.rows[0][0]);
+
+      const pgCount = await this.connection
+        .getRepository(dep)
+        .count();
+
+      console.log(
+        `${dep} => Oracle:${oracleCount} PG:${pgCount}`
+      );
 
       if (oracleCount !== pgCount) {
         mismatched.push(dep);
       }
     }
 
-    await connection.close();
     return {
       isSynced: mismatched.length === 0,
-      mismatched: mismatched
+      mismatched
     };
+
+  } finally {
+    await connection.close();
   }
+}
 
 
 
-  // Backend: Method to check if a single table's row count matches
-  // Update this method inside migrate.service.ts
-  async checkSingleTableSync(tableName: string): Promise<{ isSynced: boolean, oracleCount: number, pgCount: number }> {
-    let connection = await oracledb.getConnection({
-      user: this,
-      password: this.password,
-      connectString: this.connectionString
+  // // Backend: Method to check if a single table's row count matches
+  // // Update this method inside migrate.service.ts
+
+  // async checkSingleTableSync(tableName: string): Promise<{ isSynced: boolean, oracleCount: number, pgCount: number }> {
+  //   let connection = await oracledb.getConnection({
+  //     user: this.user,
+  //     password: this.password,
+  //     connectString: this.connectionString
+  //   });
+  async checkSingleTableSync(tableName: string, oracleConfig: any) {
+    // 1. Create a fresh connection using the dynamic config passed to the function
+    const connection = await oracledb.getConnection({
+      user: oracleConfig.username,
+      password: oracleConfig.password,
+      connectString: `(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=${oracleConfig.host})(PORT=${oracleConfig.port}))(CONNECT_DATA=(SERVICE_NAME=${oracleConfig.database})))`
     });
 
     try {
@@ -13048,6 +13396,30 @@ export class MigrateService {
       };
     } catch (error) {
       console.error(`Error checking sync for ${tableName}:`, error);
+      throw error;
+    } finally {
+      await connection.close();
+    }
+  }
+
+  
+  async fetchSourceTables(oracleConfig: any) {
+    // Use a local connection to fetch your table list
+    const connection = await oracledb.getConnection({
+      user: oracleConfig.username,
+      password: oracleConfig.password,
+      // Build the string dynamically right here
+      connectString: `(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=${oracleConfig.host})(PORT=${oracleConfig.port}))(CONNECT_DATA=(SERVICE_NAME=${oracleConfig.database})))`
+    });
+
+    try {
+      const result = await connection.execute("SELECT table_name FROM user_tables");
+      return {
+        success: true,
+        count: result.rows.length,
+        data: result.rows.map((row: any) => row[0])
+      };
+    } catch (error) {
       throw error;
     } finally {
       await connection.close();

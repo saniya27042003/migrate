@@ -2,7 +2,7 @@ import { Controller, Post, Get, Body, Param } from '@nestjs/common';
 import { DatabaseManagerService } from './connection.service';
 import { DynamicConnectionDto } from './dto/connection.dto';
 
-@Controller('database')
+@Controller('migrate/connectOracleDB')
 export class DatabaseManagerController {
   constructor(private readonly dbManagerService: DatabaseManagerService) {}
 
@@ -22,4 +22,9 @@ export class DatabaseManagerController {
       data: tables
     };
   }
+//   @Get('check-single-sync/:tableName')
+// async checkSingleSync(@Param('tableName') tableName: string) {
+//   return await this.dbManagerService.checkSingleTableSync(tableName);
+// }
+
 }

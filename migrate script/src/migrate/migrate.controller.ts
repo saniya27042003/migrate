@@ -18,10 +18,201 @@ export class MigrateController {
         return await this._service.ACMASTER()
     }
 
+    // @Post('/ACMASTER')
+    // async ACMASTER(@Body() body: any) {
+
+    //     const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+    //     const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+    //     return await this._service.ACMASTER(
+    //         oracleConfig,
+    //         postgresConfig
+    //     );
+    // }
+
+
+
     // @Post('/UPDATE')
     // async ACMASTER() {
     //     return await this._service.ACMASTER()
     // }
+
+    // @Post('/ADVOCATEMASTER')
+    // async ADVOCATEMASTER(@Body() body: any) {
+    //     const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+    //     const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+    //     return await this._service.ADVOCATEMASTER(
+    //         oracleConfig,
+    //         postgresConfig
+    //     );
+    // }
+
+    // @Post('/AUTHORITYMASTER')
+    // async AUTHORITYMASTER(@Body() body: any) {
+    //     const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+    //     const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+    //     return await this._service.AUTHORITYMASTER(
+    //         oracleConfig,
+    //         postgresConfig
+    //     );
+    // }
+
+    // @Post('/BANKMASTER')
+    // async BANKMASTER(@Body() body: any) {
+    //     const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+    //     const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+    //     return await this._service.BANKMASTER(
+    //         oracleConfig,
+    //         postgresConfig
+    //     );
+    // }
+
+    // @Post('/BANKDETAILS')
+    // async BANKDETAILS(@Body() body: any) {
+    //     const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+    //     const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+    //     return await this._service.BANKDETAILS(
+    //         oracleConfig,
+    //         postgresConfig
+    //     );
+    // }
+
+    @Post('/CASTMASTER')
+    async CASTMASTER(@Body() body: any) {
+        const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+        const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+        return await this._service.CASTMASTER(
+            oracleConfig,
+            postgresConfig
+        );
+    }
+
+    // @Post('/CATEGORYMASTER')
+    // async CATEGORYMASTER(@Body() body: any) {
+    //     const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+    //     const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+    //     return await this._service.CATEGORYMASTER(
+    //         oracleConfig,
+    //         postgresConfig
+    //     );
+    // }
+
+    // @Post('/CITYMASTER')
+    // async CITYMASTER(@Body() body: any) {
+    //     const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+    //     const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+    //     return await this._service.CITYMASTER(
+    //         oracleConfig,
+    //         postgresConfig
+    //     );
+    // }
+
+    // @Post('/COURTMASTER')
+    // async COURTMASTER(@Body() body: any) {
+    //     const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+    //     const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+    //     return await this._service.COURTMASTER(
+    //         oracleConfig,
+    //         postgresConfig
+    //     );
+    // }
+
+    // @Post('/BRANCHMASTER')
+    // async BRANCHMASTER(@Body() body: any) {
+    //     const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+    //     const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+    //     return await this._service.BRANCHMASTER(
+    //         oracleConfig,
+    //         postgresConfig
+    //     );
+    // }
+
+    // @Post('/DIRECTORMASTER')
+    // async DIRECTORMASTER(@Body() body: any) {
+    //     const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+    //     const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+    //     return await this._service.DIRECTORMASTER(
+    //         oracleConfig,
+    //         postgresConfig
+    //     );
+    // }
+
+    // @Post('/DOCUMENTMASTER')
+    // async DOCUMENTMASTER(@Body() body: any) {
+    //     const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+    //     const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+    //     return await this._service.DOCUMENTMASTER(
+    //         oracleConfig,
+    //         postgresConfig
+    //     );
+    // }
+
+    // @Post('/TRANINPUTHEAD')
+    // async TRANINPUTHEAD(@Body() body: any) {
+    //     const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+    //     const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+    //     return await this._service.TRANINPUTHEAD(
+    //         oracleConfig,
+    //         postgresConfig
+    //     );
+    // }
+
+    // @Post('/DEPRCATEGORY')
+    // async DEPRCATEGORY(@Body() body: any) {
+    //     const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+    //     const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+    //     return await this._service.DEPRCATEGORY(
+    //         oracleConfig,
+    //         postgresConfig
+    //     );
+    // }
+
+    // @Post('/DEPRRATE')
+    // async DEPRRATE(@Body() body: any) {
+    //     const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+    //     const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+    //     return await this._service.DEPRRATE(
+    //         oracleConfig,
+    //         postgresConfig
+    //     );
+    // }
+
+    // @Post('/INTRATELOAN')
+    // async INTRATELOAN(@Body() body: any) {
+    //     const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+    //     const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+    //     return await this._service.INTRATELOAN(
+    //         oracleConfig,
+    //         postgresConfig
+    //     );
+    // }
+
+    // @Post('/INTRATEPATSCHEMES')
+    // async INTRATEPATSCHEMES(@Body() body: any) {
+    //     const oracleConfig: OracleDynamicConnectionDto = body.oracle;
+    //     const postgresConfig: PgDynamicConnectionDto = body.postgres;
+
+    //     return await this._service.INTRATEPATSCHEMES(
+    //         oracleConfig,
+    //         postgresConfig
+    //     );  
+    // }
+
 
     @Post('/ADVOCATEMASTER')
     async ADVOCATEMASTER() {
@@ -43,10 +234,10 @@ export class MigrateController {
         return await this._service.BANKDETAILS()
     }
 
-    @Post('/CASTMASTER')
-    async CASTMASTER() {
-        return await this._service.CASTMASTER()
-    }
+    // @Post('/CASTMASTER')
+    // async CASTMASTER() {
+    //     return await this._service.CASTMASTER()
+    // }
 
     @Post('/CATEGORYMASTER')
     async CATEGORYMASTER() {
@@ -55,6 +246,7 @@ export class MigrateController {
 
     @Post('/CITYMASTER')
     async CITYMASTER() {
+        await this._service.TableData();
         return await this._service.CITYMASTER()
     }
 
@@ -486,6 +678,7 @@ export class MigrateController {
 
     @Post('/DAILYTRAN')
     async DAILYTRAN() {
+        await this._service.TableData();
         return await this._service.DAILYTRAN()
     }
 
@@ -505,19 +698,32 @@ export class MigrateController {
     }
 
     // migration.controller.ts
+    // @Post('check-sync')
+    // async checkSync(@Body() body: { tableName: string, dependencies: string[] }) {
+    //     return await this._service.getSyncStatus(body.tableName, body.dependencies);
+    // }
     @Post('check-sync')
-    async checkSync(@Body() body: { tableName: string, dependencies: string[] }) {
-        return await this._service.getSyncStatus(body.tableName, body.dependencies);
+    async checkSync(@Body() body: any) {
+        return await this._service.getSyncStatus(
+            body.tableName,
+            body.dependencies,
+            body.oracle
+        );
     }
 
 
 
-    @Get('check-single-sync/:tableName')
-    async checkSingleSync(@Param('tableName') tableName: string) {
-        // This calls the single-table check method we discussed earlier
-        return await this._service.checkSingleTableSync(tableName);
-    }
+    // @Get('check-single-sync/:tableName')
+    // async checkSingleSync(@Param('tableName') tableName: string) {
+    //     // This calls the single-table check method we discussed earlier
+    //     return await this._service.checkSingleTableSync(tableName);
+    // }
 
+    @Post('/check-single-sync/:tableName') // Add the leading slash
+    async checkSingleSync(@Param('tableName') tableName: string, @Body() body: any) {
+        console.log("DEBUG: Received request for:", tableName);
+        return await this._service.checkSingleTableSync(tableName, body.oracle);
+    }
 
     @Post('/connectOracleDB')
     async connectOracleDB(@Body() body: any) {
@@ -529,4 +735,11 @@ export class MigrateController {
             postgresConfig
         );
     }
+    @Post('tables/oracle') // Changed to POST to allow sending config in body
+    async fetchSourceTables(@Body() body: any) {
+        // Extract the config sent from the frontend
+        const oracleConfig = body.oracle;
+        return await this._service.fetchSourceTables(oracleConfig);
+    }
 }
+
