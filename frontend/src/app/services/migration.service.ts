@@ -61,12 +61,19 @@ export class MigrationService {
   /**
    * Checks for dependency sync issues
    */
-  checkDependencySync(tableName: string, dependencies: string[]): Observable<{ isSynced: boolean, mismatched: string[] }> {
-    return this.http.post<{ isSynced: boolean, mismatched: string[] }>(
-      `${this.baseUrl}/check-sync`,
-      { tableName, dependencies }
-    );
-  }
+  // checkDependencySync(tableName: string, dependencies: string[]): Observable<{ isSynced: boolean, mismatched: string[] }> {
+  //   return this.http.post<{ isSynced: boolean, mismatched: string[] }>(
+  //     `${this.baseUrl}/check-sync`,
+  //     { tableName, dependencies }
+  //   );
+  // }
+  checkDependencySync(tableName: string, dependencies: string[], fullPayload: any): Observable<any> {
+  return this.http.post(`${this.baseUrl}/check-sync`, {
+    tableName,
+    dependencies,
+    oracle: fullPayload.oracle
+  });
+}
   // checkDependencySync(
   //   tableName: string,
   //   dependencies: string[],

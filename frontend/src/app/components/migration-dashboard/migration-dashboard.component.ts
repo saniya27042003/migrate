@@ -197,20 +197,20 @@ export class MigrationDashboardComponent implements OnInit {
 
     // Use your existing service to call the check-sync endpoint
     //this.migrationService.checkDependencySync(master, deps).subscribe({
-    // const storedPayload = localStorage.getItem('migrationPayload');
-    // const fullPayload = storedPayload ? JSON.parse(storedPayload) : null;
+    const storedPayload = localStorage.getItem('migrationPayload');
+    const fullPayload = storedPayload ? JSON.parse(storedPayload) : null;
 
-    // if (!fullPayload) {
-    //   console.error('Migration payload not found');
-    //   return;
-    // }
+    if (!fullPayload) {
+      console.error('Migration payload not found');
+      return;
+    }
 
-    // this.migrationService.checkDependencySync(
-    //   master,
-    //   deps,
-    //   fullPayload
-    // ).subscribe({
-     this.migrationService.checkDependencySync(master, deps).subscribe({
+    this.migrationService.checkDependencySync(
+      master,
+      deps,
+      fullPayload
+    ).subscribe({
+     //this.migrationService.checkDependencySync(master, deps).subscribe({
       next: (res: { isSynced: boolean, mismatched: string[] }) => {
         this.isChecking = false;
         if (!res.isSynced) {
