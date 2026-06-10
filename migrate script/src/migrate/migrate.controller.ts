@@ -560,7 +560,7 @@ export class MigrateController {
     async TDSFORMSUBMIT(@Body() body: any) {
         await this._service.connectOracleDb(body.oracle, body.postgres);
         await this._service.TableData();
-        return await this._service.TDSFORMSUBMIT();
+        //return await this._service.TDSFORMSUBMIT();
     }
 
     @Post('/PREFIX')
@@ -653,6 +653,7 @@ export class MigrateController {
         const oracleConfig: OracleDynamicConnectionDto = body.oracle;
         const postgresConfig: PgDynamicConnectionDto = body.postgres;
 
+        //await this._service.TableData();
         return await this._service.SCHEMAST(
             oracleConfig,
             postgresConfig

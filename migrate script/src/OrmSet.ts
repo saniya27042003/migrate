@@ -17,6 +17,9 @@ export class OrmSet {
     configDto: PgDynamicConnectionDto,
   ): Promise<Connection> {
 
+
+  console.log('Received PG DTO:', configDto);
+  
     try {
 
       const config = new ToPostgresConfig(
@@ -40,6 +43,13 @@ export class OrmSet {
         synchronize: false,
         logging: false,
       };
+
+      console.log('PG Connection Options:', {
+        host: options.host,
+        port: options.port,
+        username: options.username,
+        database: options.database,
+      });
 
       const connectionManager = getConnectionManager();
 
@@ -69,3 +79,56 @@ export class OrmSet {
     return this.connection;
   }
 }
+
+// import { DataSource } from 'typeorm';
+// import { PgDynamicConnectionDto } from './connection/dto/connection.dto';
+// import { ToPostgresConfig } from './connection/toPostgresConfig';
+
+// export class OrmSet {
+
+//   private dataSource: DataSource;
+
+//   async connectPostgresDb(
+//     configDto: PgDynamicConnectionDto,
+//   ): Promise<DataSource> {
+
+//     const config = new ToPostgresConfig(
+//       configDto.type,
+//       configDto.host,
+//       configDto.port,
+//       configDto.username,
+//       configDto.password,
+//       configDto.database,
+//     );
+
+//     this.dataSource = new DataSource({
+//       name: 'dynamic_postgres',
+//       type: 'postgres',
+//       host: config.getHost(),
+//       port: Number(config.getPort()),
+//       username: config.getUser(),
+//       password: config.getPassword(),
+//       database: config.getDatabase(),
+
+//       // IMPORTANT FIX
+//       entities: [__dirname + '/../**/*.entity{.js,.ts}'],
+
+//       synchronize: false,
+//       logging: false,
+//     });
+
+//     if (this.dataSource.isInitialized) {
+//       await this.dataSource.destroy();
+//     }
+
+//     await this.dataSource.initialize();
+
+//     console.log('PostgreSQL Connected Successfully');
+
+//     return this.dataSource;
+//   }
+
+//   getConnection(): DataSource {
+//     return this.dataSource;
+//   }
+// }

@@ -3,10 +3,10 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 // 1. Define your dynamic variables here (or import them from your service/UI)
 const pgUser = 'postgres';
-const pgPassword = '070502';
-const pgHost = 'localhost';
+const pgPassword = 'swikar1637';
+const pgHost = '192.168.137.91';
 const pgPort = 5432;
-const pgDatabase = 'nirmiti_new';
+const pgDatabase = 'JANATASANGALI';
 
 // 🌟 2. Build the Postgres connection string exactly like you did for Oracle
 const pgConnectionString = `postgresql://${pgUser}:${pgPassword}@${pgHost}:${pgPort}/${pgDatabase}`;
