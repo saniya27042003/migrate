@@ -2416,7 +2416,7 @@ export class MigrateService {
         }
       }
 
-      return "success"
+      //return "success"
       // await connection2.close()
       // await queryRunner.commitTransaction();
       console.log('CASTMASTER')
@@ -4588,6 +4588,7 @@ export class MigrateService {
 
         }
 
+        const customeraddressRepo = this.dataSourcePg.getRepository(CUSTOMERADDRESS);
 
         //customer address
         let address = new CUSTOMERADDRESS();
@@ -4607,7 +4608,8 @@ export class MigrateService {
         address['AC_ADDTYPE'] = 'P';
         address['AC_CTCODE'] = ele.AC_CTCODE == 9999 ? 10 : ele.AC_CTCODE;
         address['ORA_AC_NO'] = ele.AC_NO;
-        await queryRunner.manager.save(CUSTOMERADDRESS, address);
+        //await queryRunner.manager.save(CUSTOMERADDRESS, address);
+        await customeraddressRepo.save(address);
         //previousACNO = currentACNO;
         console.log('currentACNO:', ele.AC_NO)
       }
@@ -13395,9 +13397,17 @@ export class MigrateService {
 
         const oracleCount = Number(oracleResult.rows[0][0]);
 
-        const pgCount = await this.connection
-          .getRepository(dep)
-          .count();
+        // const pgCount = await this.dataSourcePg
+        //   .getRepository(dep)
+        //   .count();
+        // const pgResult = await this.dataSourcePg.query(
+        //   `SELECT COUNT(*) FROM "${dep}"`
+        // );
+        const pgResult = await this.dataSourcePg.query(
+          `SELECT COUNT(*) FROM ${dep.toLowerCase()}`
+        );
+
+        const pgCount = Number(pgResult[0].count);
 
         console.log(
           `${dep} => Oracle:${oracleCount} PG:${pgCount}`
@@ -13442,7 +13452,15 @@ export class MigrateService {
       const oracleCount = Number(oracleResult.rows[0][0]);
 
       // Assuming this.connection is your Postgres connection
-      const pgCount = await this.connection.getRepository(tableName).count();
+      //const pgCount = await this.connection.getRepository(tableName).count();
+
+      console.log('Checking PG table:', tableName);
+      console.log('Lowercase PG table:', tableName.toLowerCase());
+
+      const pgResult = await this.dataSourcePg.query(
+        `SELECT COUNT(*) FROM ${tableName.toLowerCase()}`
+      );
+      const pgCount = Number(pgResult[0].count);
 
       // Return the numbers along with the true/false status!
       return {
