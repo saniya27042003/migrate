@@ -10866,6 +10866,7 @@ export class MigrateService {
           let TRAN_ACNO = String(ele.TRAN_ACNO).padStart(6, '0');
           let TRAN_BANKACNO = this.PostSyspara[0].BANK_CODE + this.PostBranchOne[0].CODE + schemastData[0].S_APPL + TRAN_ACNO
           let pgmastData = pgmasterdata.filter(item1 => item1['BANKACNO'] == TRAN_BANKACNO);
+          const pigmycharmasterRepo = this.dataSourcePg.getRepository(PIGMYCHARTMASTER);
           let chart = new PIGMYCHARTMASTER()
           chart['SERIAL_NO'] = ele.SERIAL_NO
           chart['TRAN_ACNOTYPE'] = ele.TRAN_ACNOTYPE
@@ -10878,7 +10879,8 @@ export class MigrateService {
           chart['CHART_NO'] = ele.CHART_NO
           chart['PIGMYCHARTID'] = pigmychartInsert.id
           chart['pigmyAccountID'] = pgmastData == null ? null : pgmastData[0].id
-          await this.PIGMYCHARTMASTERService.insert(chart)
+          //await this.PIGMYCHARTMASTERService.insert(chart)
+          await pigmycharmasterRepo.save(chart) 
         }
       }
     }
@@ -11314,7 +11316,7 @@ export class MigrateService {
       //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       let result = await this.connectionByOracle.execute(`SELECT STOCKSTATEMENT.*,schemast.typeid as actype  FROM STOCKSTATEMENT left join schemast on STOCKSTATEMENT.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      const stockstatementselectRepo = this.dataSourcePg.getRepository(this.STOCKSTATEMENTselect)
+      const stockstatementselectRepo = this.dataSourcePg.getRepository(STOCKSTATEMENT);
       let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
@@ -11375,7 +11377,7 @@ export class MigrateService {
       //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       let result = await this.connectionByOracle.execute(`select  VEHICLE.*,schemast.typeid as actype from VEHICLE left join schemast on VEHICLE.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      const vehicleselectRepo = this.dataSourcePg.getRepository(this.VEHICLEselect);
+      const vehicleselectRepo = this.dataSourcePg.getRepository(VEHICLE);
       let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
@@ -11415,7 +11417,7 @@ export class MigrateService {
           obj['PURCHASE_PRICE'] = ele.PURCHASE_PRICE
           obj['BRANCH_CODE'] = this.BRANCH_CODE
           //let insertObj = await queryRunner.manager.insert(VEHICLE, obj)
-          let inseryObj = await vehicleselectRepo.save(obj)
+          let insertObj = await vehicleselectRepo.save(obj)
         }
       }
       //await connection2.close()
@@ -11440,7 +11442,7 @@ export class MigrateService {
       //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       let result = await this.connectionByOracle.execute(`select  PLEDGESTOCK.*,schemast.typeid as actype from PLEDGESTOCK left join schemast on PLEDGESTOCK.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      const pledgestockselectRepo = this.dataSourcePg.getRepository(this.PLEDGESTOCKselect);
+      const pledgestockselectRepo = this.dataSourcePg.getRepository(PLEDGESTOCK);
       let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
@@ -11503,7 +11505,7 @@ export class MigrateService {
       //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       let result = await this.connectionByOracle.execute(`select  PLANTMACHINARY.*,schemast.typeid as actype from PLANTMACHINARY left join schemast on PLANTMACHINARY.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      const plantmachinaryselectRepo = this.dataSourcePg.getRepository(this.PLANTMACHINARYselect);
+      const plantmachinaryselectRepo = this.dataSourcePg.getRepository(PLANTMACHINARY);
       let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
@@ -11566,7 +11568,7 @@ export class MigrateService {
       //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       let result = await this.connectionByOracle.execute(`select  OWNDEPOSIT.*,schemast.typeid as actype from OWNDEPOSIT left join schemast on OWNDEPOSIT.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      const owndepositselectRepo = this.dataSourcePg.getRepository(this.OWNDEPOSITselect);
+      const owndepositselectRepo = this.dataSourcePg.getRepository(OWNDEPOSIT);
       let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
@@ -11630,7 +11632,7 @@ export class MigrateService {
       //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       let result = await this.connectionByOracle.execute(`select  OTHERSECURITY.*,schemast.typeid as actype from OTHERSECURITY left join schemast on OTHERSECURITY.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      const othersecurityselectRepo = this.dataSourcePg.getRepsoitory(this.OTHERSECURITYselect);
+      const othersecurityselectRepo = this.dataSourcePg.getRepsoitory(OTHERSECURITY);
       let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
@@ -11689,7 +11691,7 @@ export class MigrateService {
       //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       let result = await this.connectionByOracle.execute(`select  MARKETSHARE.*,schemast.typeid as actype from MARKETSHARE left join schemast on MARKETSHARE.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      const marketshareselectRepo = this.dataSourcePg.getRepository(this.MARKETSHAREselect);
+      const marketshareselectRepo = this.dataSourcePg.getRepository(MARKETSHARE);
       let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
@@ -11750,7 +11752,7 @@ export class MigrateService {
       //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       let result = await this.connectionByOracle.execute(`select  LANDBUILDING.*,schemast.typeid as actype from LANDBUILDING left join schemast on LANDBUILDING.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      const landbuildingselectRepo = this.dataSourcePg.getRepository(this.LANDBUILDINGselect);
+      const landbuildingselectRepo = this.dataSourcePg.getRepository(LANDBUILDING);
       let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
@@ -11816,7 +11818,7 @@ export class MigrateService {
       //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       let result = await this.connectionByOracle.execute(`select  GOLDSILVER.*,schemast.typeid as actype from GOLDSILVER left join schemast on GOLDSILVER.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      const goldsilverselectRepo = this.dataSourcePg.getRepository(this.GOLDSILVERselect);
+      const goldsilverselectRepo = this.dataSourcePg.getRepository(GOLDSILVER);
       let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
@@ -11885,7 +11887,7 @@ export class MigrateService {
       //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       let result = await this.connectionByOracle.execute(`select  FURNITURE.*,schemast.typeid as actype from FURNITURE left join schemast on FURNITURE.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      const furnitureselectRepo = this.dataSourcePg.getRepository(this.FURNITUREselect);
+      const furnitureselectRepo = this.dataSourcePg.getRepository(FURNITURE);
       let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
@@ -11947,7 +11949,7 @@ export class MigrateService {
       //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       let result = await this.connectionByOracle.execute(`select  FIREPOLICY.*,schemast.typeid as actype from FIREPOLICY left join schemast on FIREPOLICY.ac_type=schemast.s_appl  where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      const firepolicyRepo = this.dataSourcePg.getRepository(this.FIREPOLICYselect);
+      const firepolicyselectRepo = this.dataSourcePg.getRepository(FIREPOLICY);
       let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
@@ -11983,7 +11985,7 @@ export class MigrateService {
           obj['BRANCH_CODE'] = this.BRANCH_CODE
           obj['SECU_CODE'] = secuCode?.id
           //let insertObj = await queryRunner.manager.insert(FIREPOLICY, obj)
-          let insertObj = await firepolicyRepo.save(obj)
+          let insertObj = await firepolicyselectRepo.save(obj)
         }
       }
       //await connection2.close()
@@ -12000,14 +12002,15 @@ export class MigrateService {
   }
 
   async SECINSURANCEselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select  SECINSURANCE.*,schemast.typeid as actype from SECINSURANCE left join schemast on SECINSURANCE.ac_type=schemast.s_appl where INSURANCE_DATE > '${this.changedate}'`);
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select  SECINSURANCE.*,schemast.typeid as actype from SECINSURANCE left join schemast on SECINSURANCE.ac_type=schemast.s_appl where INSURANCE_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const secinsuranceselectRepo = this.dataSourcePg.getRepository(SECINSURANCE);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -12038,32 +12041,34 @@ export class MigrateService {
           obj['INSU_AMOUNT'] = ele.INSU_AMOUNT
           obj['BRANCH_CODE'] = this.BRANCH_CODE
           obj['SECU_CODE'] = secuCode?.id
-          let insertObj = await queryRunner.manager.insert(SECINSURANCE, obj)
+          //let insertObj = await queryRunner.manager.insert(SECINSURANCE, obj)
+          let insertObj = secinsuranceselectRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      //await connection2.close()
+      //await queryRunner.commitTransaction();
       console.log('secinsurance')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //GOVTSECULIC
   async GOVTSECULICselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select  GOVTSECULIC.*,schemast.typeid as actype from GOVTSECULIC left join schemast on GOVTSECULIC.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select  GOVTSECULIC.*,schemast.typeid as actype from GOVTSECULIC left join schemast on GOVTSECULIC.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const govtseculicselectRepo = this.dataSourcePg.getRepository(GOVTSECULIC);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -12101,32 +12106,34 @@ export class MigrateService {
           obj['SURRENDER_VALUE'] = ele.SURRENDER_VALUE
           obj['NOMINEE'] = ele.RECOVERY
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(GOVTSECULIC, obj)
+          //let insertObj = await queryRunner.manager.insert(GOVTSECULIC, obj)
+          let insertObj = govtseculicselectRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('govtseculic')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //BOOKDEBTS
   async BOOKDEBTSselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select  BOOKDEBTS.*,schemast.typeid as actype from BOOKDEBTS left join schemast on bookdebts.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select  BOOKDEBTS.*,schemast.typeid as actype from BOOKDEBTS left join schemast on bookdebts.ac_type=schemast.s_appl where SUBMISSION_DATE > '${this.changedate}'`);
       let data = await this.jsonConverter(result);
-      let securiy = await connection2.execute(`select SECU_NAME from securitymaster`)
+      const bookdebtsselectRepo = this.dataSourcePg.getRepository(BOOKDEBTS);
+      let securiy = await this.connectionByOracle.execute(`select SECU_NAME from securitymaster`)
       let secutityPGData = await this.SECURITYMASTERService.find()
       let securityData = await this.jsonConverter(securiy);
       for (let ele of data) {
@@ -12163,31 +12170,33 @@ export class MigrateService {
           obj['SECURITY_TYPE'] = ele.SECURITY_TYPE
           obj['AC_TYPE'] = ele.ACTYPE
           obj['BRANCH_CODE'] = this.BRANCH_CODE
-          let insertObj = await queryRunner.manager.insert(BOOKDEBTS, obj)
+          //let insertObj = await queryRunner.manager.insert(BOOKDEBTS, obj)
+          let insertObj = bookdebtsselectRepo.save(obj)
         }
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('bookdebts')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //SPECIALINSTRUCTION
   async SPECIALINSTRUCTIONselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select  SPECIALINSTRUCTION.*,schemast.typeid as actype from SPECIALINSTRUCTION left join schemast on SPECIALINSTRUCTION.tran_actype=schemast.s_appl where INSTRUCTION_DATE > '${this.changedate}' order by instruction_date`);
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select  SPECIALINSTRUCTION.*,schemast.typeid as actype from SPECIALINSTRUCTION left join schemast on SPECIALINSTRUCTION.tran_actype=schemast.s_appl where INSTRUCTION_DATE > '${this.changedate}' order by instruction_date`);
       let data = await this.jsonConverter(result);
+      const specialinstructionselectRepo = this.dataSourcePg.getRepository(SPECIALINSTRUCTION);
       for (let ele of data) {
         if (ele.ACTYPE == null) {
           continue;
@@ -12213,39 +12222,41 @@ export class MigrateService {
         obj['TO_DATE'] = ele.TO_DATE == '' || ele.TO_DATE == null ? null : moment(ele.TO_DATE).format('DD/MM/YYYY');
         obj['IS_RESTRICT'] = ele.IS_RESTRICT == 0 ? '0' : '1'
         obj['REVOKE_DATE'] = ele.REVOKE_DATE == '' || ele.REVOKE_DATE == null ? null : moment(ele.REVOKE_DATE).format('DD/MM/YYYY');
-        await queryRunner.manager.save(SPECIALINSTRUCTION, obj);
+        //await queryRunner.manager.save(SPECIALINSTRUCTION, obj);
+        await specialinstructionselectRepo.save(obj);
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('SPECIALINSTRUCTION')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
 
   //STANDINSTRUCTION
   async STANDINSTRUCTIONselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
-      let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
-      let result = await connection2.execute(`select * from STANDINSTRUCTION where INSTRUCTION_DATE > '${this.changedate}' order by instruction_date`);
+      //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
+      let result = await this.connectionByOracle.execute(`select * from STANDINSTRUCTION where INSTRUCTION_DATE > '${this.changedate}' order by instruction_date`);
       let data = await this.jsonConverter(result);
+      const standinstructionselectRepo = this.dataSourcePg.getRepository(STANDINSTRUCTION);
       for (let ele of data) {
         let CR_ACTYPE = null
         if (ele.CR_ACTYPE != null) {
-          let memTYPE = await connection2.execute(`select TYPEID from schemast where S_APPL=${ele.CR_ACTYPE}`)
+          let memTYPE = await this.connectionByOracle.execute(`select TYPEID from schemast where S_APPL=${ele.CR_ACTYPE}`)
           CR_ACTYPE = await this.jsonConverter(memTYPE);
         }
         let DR_ACTYPE = null
         if (ele.DR_ACTYPE != null) {
-          let memTYPE = await connection2.execute(`select TYPEID from schemast where S_APPL=${ele.DR_ACTYPE}`)
+          let memTYPE = await this.connectionByOracle.execute(`select TYPEID from schemast where S_APPL=${ele.DR_ACTYPE}`)
           DR_ACTYPE = await this.jsonConverter(memTYPE);
         }
         let drschemastData = DR_ACTYPE != null ? await this.SCHEMASTService.find({
@@ -12298,29 +12309,31 @@ export class MigrateService {
         interestIns['IS_AUTO_CUT_LNPGCOM'] = ele.IS_AUTO_CUT_LNPGCOM
         interestIns['REVOKE_DATE'] = ele.REVOKE_DATE == '' || ele.REVOKE_DATE == null ? null : moment(ele.REVOKE_DATE).format('DD/MM/YYYY');
         interestIns['BRANCH_CODE'] = this.BRANCH_CODE
-        await queryRunner.manager.save(STANDINSTRUCTION, interestIns);
+        //await queryRunner.manager.save(STANDINSTRUCTION, interestIns);
+        await standinstructionselectRepo.save(interestIns);
       }
-      await connection2.close()
-      await queryRunner.commitTransaction();
+      // await connection2.close()
+      // await queryRunner.commitTransaction();
       console.log('STANDINSTRUCTION')
     } catch (error) {
       // Rollback the transaction if an error occurs
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       // Release the query runner
-      await queryRunner.release();
+      //await queryRunner.release();
     }
   }
   //INTINSTRUCTION
   async INTINSTRUCTIONselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
       //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       let result = await this.connectionByOracle.execute(`select * from INTINSTRUCTION where INSTRUCTION_DATE > '${this.changedate}' order by instruction_date`);
       let data = await this.jsonConverter(result);
+      const intinstructionselectrRepo =  this.dataSourcePg.getRepository(INTINSTRUCTION);
       for (let ele of data) {
         let CR_ACTYPE = null
         if (ele.CR_ACTYPE != null) {
@@ -12378,10 +12391,11 @@ export class MigrateService {
         // interestIns['DEFAULT_INTEREST_APPLICABLE'] = ele.DEFAULT_INTEREST_APPLICABLE
         interestIns['REVOKE_DATE'] = ele.REVOKE_DATE == '' || ele.REVOKE_DATE == null ? null : moment(ele.REVOKE_DATE).format('DD/MM/YYYY');
         interestIns['BRANCH_CODE'] = this.BRANCH_CODE
-        await queryRunner.manager.save(INTINSTRUCTION, interestIns);
+        //await queryRunner.manager.save(INTINSTRUCTION, interestIns);
+        await intinstructionselectrRepo.save(interestIns);
       }
       //await connection2.close()
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
       console.log('intinstruction')
     } catch (error) {
       // Rollback the transaction if an error occurs
@@ -12498,13 +12512,14 @@ export class MigrateService {
     await this.PIGMYTRANSUB(data);
   }
   async DAILYSHRTRANselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
       //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       let result = await this.connectionByOracle.execute(`select DAILYSHRTRAN.*, SCHEMAST.TYPEID AS ACTYPE from DAILYSHRTRAN LEFT JOIN SCHEMAST ON DAILYSHRTRAN.TRAN_ACTYPE= SCHEMAST.S_APPL where tran_date > '${this.changedate}' order by DAILYSHRTRAN.TRAN_NO`)
       let data = await this.jsonConverter(result);
+      const dailyshrtranselectRepo = this.dataSourcePg.getRepository(DAILYSHRTRAN);
       //await connection2.close()
       for (let item of data) {
         if (item.ACTYPE == null) {
@@ -12581,7 +12596,8 @@ export class MigrateService {
         obj['IS_AUTO_TRF_ENTRY'] = item.IS_AUTO_TRF_ENTRY
         obj['TRAN_SOURCE_NO'] = item.TRAN_SOURCE_NO
         obj['SH_CERTIFICATE_PRINTED'] = item.SH_CERTIFICATE_PRINTED == 0 ? 0 : 1
-        await queryRunner.manager.insert(DAILYSHRTRAN, obj)
+        //await queryRunner.manager.insert(DAILYSHRTRAN, obj)
+        await dailyshrtranselectRepo.save(obj)
       }
       // await queryRunner.commitTransaction();
       console.log('DAILYSHRTRAN')
@@ -12595,13 +12611,14 @@ export class MigrateService {
     }
   }
   async RENEWALHISTORYselect() {
-    let queryRunner = await this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // let queryRunner = await this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
       //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       let result = await this.connectionByOracle.execute(`select renewalhistory.*, schemast.typeid as actype from renewalhistory left join schemast on renewalhistory.ac_type=schemast.s_appl where RENEWAL_DATE > '${this.changedate}'`)
       let data = await this.jsonConverter(result);
+      const renewalhistoryselectRepo = this.dataSourcePg.getRepository(RENEWALHISTORY);
       //await connection2.close()
       for (let ele of data) {
         let renew = new RENEWALHISTORY()
@@ -12668,7 +12685,8 @@ export class MigrateService {
         renew['OLD_INT_CODE'] = ele.OLD_INT_CODE
         renew['OLD_INTEREST_DATE'] = ele.OLD_INTEREST_DATE == '' || ele.OLD_INTEREST_DATE == null ? null : moment(ele.OLD_INTEREST_DATE).format('DD/MM/YYYY');
         renew['TRAN_TYPE'] = ele.TRAN_TYPE
-        await queryRunner.manager.insert(RENEWALHISTORY, renew);
+        //await queryRunner.manager.insert(RENEWALHISTORY, renew);
+        await renewalhistoryselectRepo.save(renew);
       }
       //await queryRunner.commitTransaction();
       console.log('RENEWALHISTORY')
@@ -12738,6 +12756,7 @@ export class MigrateService {
         let header = await deadstockheaderselectRepo.save(obj)
         let detail = await this.connectionByOracle.execute(`select * from deadstockdetail where tran_date=TO_DATE('${date}','DD/MM/YYYY') and tran_no=${item.TRAN_NO} order by serial_no`)
         let resultDetail = await this.jsonConverter(detail);
+        const deadstockdetailselectRepo = this.dataSourcePg.getRepository(DEADSTOCKDETAIL);
         for (let ele of resultDetail) {
           let itemmasterData = await this.ITEMMASTERService.findOne({ ITEM_CODE: ele.ITEM_CODE })
           let details = new DEADSTOCKDETAIL()
@@ -12756,7 +12775,7 @@ export class MigrateService {
           details['DEPR_RATE'] = ele.DEPR_RATE
           details['deadstockHeader'] = header.id
           //await queryRunner.manager.insert(DEADSTOCKDETAIL, details)
-          await deadstockheaderselectRepo.save(details)
+          await deadstockdetailselectRepo.save(details)
         }
       }
       // await connection2.close()
@@ -12875,7 +12894,7 @@ export class MigrateService {
         select PIGMY.*, SCHEMAST.S_APPL from PIGMY LEFT JOIN SCHEMAST ON PIGMY.TRAN_ACTYPE= SCHEMAST.S_APPL   
         order by PIGMY.TRAN_NO `);
     var data = await this.jsonConverter(result);
-    const pigmytransRepo = this.dataSourcePg.getRepository(this.PIGMYTRANS);
+    const pigmytransRepo = this.dataSourcePg.getRepository(PIGMYTRAN);
     //get maxcount of row
     // let datacount = await connection2.execute(`select count(*) as count from PIGMY `);
     // var result1 = await this.jsonConverter(datacount);
