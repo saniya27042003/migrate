@@ -115,14 +115,14 @@ export class MigrationDashboardComponent implements OnInit {
    */
   private executeMigration(tableName: string) {
     // 1. You already have the payload here:
-     if (this.isMigrated(tableName)) {
-    Swal.fire({
-      icon: 'info',
-      title: 'Already Processed',
-      text: `${tableName} is already migrated/processed.`
-    });
-    return;
-  }
+    if (this.isMigrated(tableName)) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Already Processed',
+        text: `${tableName} is already migrated/processed.`
+      });
+      return;
+    }
     const storedPayload = localStorage.getItem('migrationPayload');
     const fullPayload = storedPayload ? JSON.parse(storedPayload) : null;
 
@@ -151,23 +151,9 @@ export class MigrationDashboardComponent implements OnInit {
               title: 'Success!',
               html: `${tableName} migration successful!<br><br>Oracle: <b>${finalStats.oracleCount}</b> rows<br>Postgres: <b>${finalStats.pgCount}</b> rows`
             });
-            if (finalStats.isSynced) {
-              this.migratedTables.add(tableName);
-              this.migratedTables = new Set(this.migratedTables);
-            } else {
-              Swal.fire({
-                icon: 'warning',
-                title: 'Count Mismatch',
-                html: `
-          Oracle: <b>${finalStats.oracleCount}</b><br>
-          Postgres: <b>${finalStats.pgCount}</b><br><br>
-          Table will NOT be marked as migrated.
-        `
-              });
-            }
 
-             //this.migratedTables.add(tableName);
-             //this.migratedTables = new Set(this.migratedTables);
+            this.migratedTables.add(tableName);
+            this.migratedTables = new Set(this.migratedTables);
 
             if (this.selectedParent) {
               this.checkTableSync(this.selectedParent);
@@ -236,7 +222,7 @@ export class MigrationDashboardComponent implements OnInit {
       next: (res: { isSynced: boolean, mismatched: string[] }) => {
         this.isChecking = false;
         if (!res.isSynced) {
-          this.validationError = `Migration blocked! Count mismatch in: ${res.mismatched.join(', ')}`;
+          this.validationError = `Migration Stopped! Count mismatch in: ${res.mismatched.join(', ')}`;
         }
       },
       error: (err) => {
