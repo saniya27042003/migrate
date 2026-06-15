@@ -1,0 +1,282 @@
+/* =========================
+   CLEANUP CONTAINER (NEW UI)
+========================= */
+
+.cleanup-container {
+  max-width: 900px;
+  margin: 60px auto;
+  padding: 28px;
+
+  background: #0f172a;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+
+  box-shadow: 0 12px 35px rgba(0,0,0,0.5);
+
+  font-family: "Segoe UI", sans-serif;
+  color: #e2e8f0;
+}
+
+/* =========================
+   HEADER SECTION
+========================= */
+
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 18px;
+}
+
+.header-section h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* BACK BUTTON */
+.btn-back {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+
+  background: #1e293b;
+  color: #ffffff;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-back:hover {
+  background: #334155;
+  transform: translateY(-1px);
+}
+
+/* =========================
+   STATUS STRIP (already similar style)
+========================= */
+
+.status-strip {
+  margin: 18px 0;
+
+  padding: 14px 18px;
+
+  background: #1f2937;
+  border-radius: 12px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  font-size: 14px;
+  color: #cbd5e1;
+}
+
+.status-indicator strong {
+  color: #ffffff;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+/* =========================
+   DROPZONE
+========================= */
+
+.dropzone-area {
+  border: 2px dashed rgba(255,255,255,0.15);
+  border-radius: 16px;
+
+  padding: 40px 24px;
+
+  background: #0b1220;
+
+  text-align: center;
+
+  transition: all 0.2s ease;
+}
+
+.dropzone-area:hover {
+  border-color: #38bdf8;
+  background: rgba(56,189,248,0.05);
+}
+
+.dropzone-area.file-loaded {
+  border: 2px solid #38bdf8;
+  background: rgba(56,189,248,0.08);
+}
+
+/* Upload prompt */
+.prompt-content .upload-icon {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.prompt-content h3 {
+  margin: 10px 0 6px;
+  color: #ffffff;
+}
+
+.prompt-content p {
+  color: #94a3b8;
+  margin-bottom: 16px;
+}
+
+/* File label */
+.file-label {
+  display: inline-block;
+
+  padding: 10px 18px;
+
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  color: white;
+
+  border-radius: 10px;
+
+  font-weight: 600;
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+.file-label:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(37,99,235,0.3);
+}
+
+/* =========================
+   FILE DETAILS
+========================= */
+
+.file-details {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+}
+
+.file-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.file-icon {
+  font-size: 34px;
+}
+
+.meta p {
+  margin: 0;
+}
+
+.meta p:first-child {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.meta p:last-child {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+/* CLEAR BUTTON */
+.btn-clear {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 10px;
+
+  background: #ef4444;
+  color: white;
+
+  font-weight: 600;
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.btn-clear:hover {
+  background: #dc2626;
+}
+
+/* =========================
+   ACTION BUTTON
+========================= */
+
+.action-bar {
+  margin-top: 22px;
+}
+
+.btn-execute {
+  width: 100%;
+  padding: 14px;
+
+  border: none;
+  border-radius: 14px;
+
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  color: white;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: all 0.25s ease;
+}
+
+.btn-execute:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(37,99,235,0.35);
+}
+
+.btn-execute:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =========================
+   ALERT
+========================= */
+
+.alert-banner {
+  margin-top: 18px;
+  padding: 12px 14px;
+
+  border-radius: 10px;
+
+  background: rgba(59,130,246,0.1);
+  border: 1px solid rgba(59,130,246,0.25);
+
+  color: #93c5fd;
+  font-size: 14px;
+}
+
+.file-note {
+    display: block;
+    margin-top: 2px;
+    margin-bottom: 10px;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.alert-banner.error {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: #ef4444;
+}

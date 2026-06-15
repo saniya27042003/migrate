@@ -7,6 +7,7 @@ import { DatabaseConnectionComponent } from './database-connection/database-conn
 import { MigrationDashboardComponent } from './components/migration-dashboard/migration-dashboard.component';
 
 import { AuthGuard } from './guards/auth.guard';
+import { DeleteSequenceComponent } from './delete-sequence/delete-sequence.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -17,6 +18,8 @@ const routes: Routes = [
 
   // 3. Keep the Migration Dashboard here
   { path: 'migration', component: MigrationDashboardComponent, canActivate: [AuthGuard] },
+
+  { path: 'delete-sequence', component: DeleteSequenceComponent, canActivate: [AuthGuard] },
 
   { path: '**', redirectTo: 'login' }
 ];

@@ -68,12 +68,12 @@ export class MigrationService {
   //   );
   // }
   checkDependencySync(tableName: string, dependencies: string[], fullPayload: any): Observable<any> {
-  return this.http.post(`${this.baseUrl}/check-sync`, {
-    tableName,
-    dependencies,
-    oracle: fullPayload.oracle
-  });
-}
+    return this.http.post(`${this.baseUrl}/check-sync`, {
+      tableName,
+      dependencies,
+      oracle: fullPayload.oracle
+    });
+  }
   // checkDependencySync(
   //   tableName: string,
   //   dependencies: string[],
@@ -90,6 +90,7 @@ export class MigrationService {
   //   );
   // }
 
+
   /**
    * Checks if a single table is synchronized
    */
@@ -98,4 +99,21 @@ export class MigrationService {
     // Use POST to carry the configuration payload
     return this.http.post(`${this.baseUrl}/check-single-sync/${tableName}`, fullPayload);
   }
+
+  //   /**
+  //  * Delete & Sequence
+  //  */
+  //   deleteAndSequence(formData: FormData): Observable<any> {
+  //     return this.http.post(
+  //       `${this.baseUrl}/delete-sequence`,
+  //       formData
+  //     );
+  //   }
+  executeDeleteSequence(formData: FormData) {
+    return this.http.post(
+      `${this.baseUrl}/delete-sequence`,
+      formData
+    );
+  }
 }
+

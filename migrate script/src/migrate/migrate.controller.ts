@@ -1,7 +1,8 @@
 /* eslint-disable prettier/prettier */
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { MigrateService } from './migrate.service'
 import { OracleDynamicConnectionDto, PgDynamicConnectionDto } from 'src/connection/dto/connection.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('migrate')
 export class MigrateController {
@@ -1326,6 +1327,14 @@ export class MigrateController {
         // Extract the config sent from the frontend
         const oracleConfig = body.oracle;
         return await this._service.fetchSourceTables(oracleConfig);
+    }
+
+    @Post('/delete-sequence')
+    @UseInterceptors(FileInterceptor('file'))
+    async executeDeleteSequence(
+        @UploadedFile() file: Express.Multer.File,
+    ) {
+        return await this._service.executeDeleteSequence(file);
     }
 }
 

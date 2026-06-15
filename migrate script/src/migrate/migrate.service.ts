@@ -1866,6 +1866,8 @@ export class MigrateService {
     }
   }
 
+
+
   //RECOVERYCLEARKMASTER
   async RECOVERYCLEARKMASTER() {
     // let queryRunner = await this.connection.createQueryRunner();
@@ -10880,7 +10882,7 @@ export class MigrateService {
           chart['PIGMYCHARTID'] = pigmychartInsert.id
           chart['pigmyAccountID'] = pgmastData == null ? null : pgmastData[0].id
           //await this.PIGMYCHARTMASTERService.insert(chart)
-          await pigmycharmasterRepo.save(chart) 
+          await pigmycharmasterRepo.save(chart)
         }
       }
     }
@@ -12333,7 +12335,7 @@ export class MigrateService {
       //let connection2 = await oracledb.getConnection({ user: this.user, password: this.password, connectString: this.connectionString });
       let result = await this.connectionByOracle.execute(`select * from INTINSTRUCTION where INSTRUCTION_DATE > '${this.changedate}' order by instruction_date`);
       let data = await this.jsonConverter(result);
-      const intinstructionselectrRepo =  this.dataSourcePg.getRepository(INTINSTRUCTION);
+      const intinstructionselectrRepo = this.dataSourcePg.getRepository(INTINSTRUCTION);
       for (let ele of data) {
         let CR_ACTYPE = null
         if (ele.CR_ACTYPE != null) {
@@ -13519,5 +13521,214 @@ export class MigrateService {
     }
   }
 
+  //   async executeDeleteSequence(file: Express.Multer.File) {
+  //   console.log('Uploaded file:', file?.originalname);
+
+  //   return {
+  //     success: true,
+  //     message: 'Delete Sequence API Working'
+  //   };
+  // }
+  async executeDeleteSequence(file: Express.Multer.File) {
+
+    console.log('Uploaded file:', file?.originalname);
+
+    const csvContent = file.buffer.toString('utf8');
+
+    // const tables = csvContent
+    //   .split(/\r?\n/)
+    //   .map(t => t.trim())
+    //   .filter(t => t);
+    
+    // const tables = csvContent
+    //   .split(/\r?\n/)
+    //   .slice(1) // skip first row
+    //   .map(t => t.trim())
+    //   .filter(t => t);
+    const tables = csvContent
+      .split(/\r?\n/)
+      .map(t => t.trim())
+      .filter(t => t)
+      .filter(t => t.toLowerCase() !== 'table_name');
+
+    console.log('Tables found:', tables);
+
+    // for (const table of tables) {
+
+    //   console.log('Deleting table:', table);
+
+    //   await this.deleteTableRecursively(table);
+    // }
+    const deletedTables: string[] = [];
+    const failedTables: string[] = [];
+
+    for (const table of tables) {
+
+      try {
+
+        console.log('Deleting table:', table);
+
+        await this.deleteTableRecursively(table);
+
+        deletedTables.push(table);
+
+      } catch (error) {
+
+        console.error(
+          `Skipping ${table}:`,
+          error.message
+        );
+
+        failedTables.push(table);
+
+        continue;
+      }
+    }
+
+    return {
+      success: true,
+      message: 'Delete sequence completed',
+      processedCount: tables.length,
+      tables
+    };
+  }
+
+  async deleteTableRecursively(tableName: string): Promise<void> {
+
+    const queryRunner = this.dataSourcePg.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+
+      const exists = await queryRunner.query(
+        `
+      SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND lower(table_name) = lower($1)
+      )
+      `,
+        [tableName]
+      );
+
+      if (!exists[0].exists) {
+        throw new Error(`Table "${tableName}" does not exist`);
+      }
+
+      console.log(`Finding dependencies for ${tableName}`);
+
+      const dependencyTree = await queryRunner.query(
+        `
+      WITH RECURSIVE fk_tree AS (
+
+          SELECT
+              ccu.table_name AS parent_table,
+              tc.table_name AS child_table,
+              1 AS level,
+              ARRAY[tc.table_name] AS visited
+
+          FROM information_schema.table_constraints tc
+
+          JOIN information_schema.key_column_usage kcu
+            ON tc.constraint_name = kcu.constraint_name
+
+          JOIN information_schema.constraint_column_usage ccu
+            ON ccu.constraint_name = tc.constraint_name
+
+          WHERE tc.constraint_type = 'FOREIGN KEY'
+            AND lower(ccu.table_name) = lower($1)
+
+          UNION ALL
+
+          SELECT
+              ccu.table_name,
+              tc.table_name,
+              ft.level + 1,
+              visited || tc.table_name
+
+          FROM information_schema.table_constraints tc
+
+          JOIN information_schema.key_column_usage kcu
+            ON tc.constraint_name = kcu.constraint_name
+
+          JOIN information_schema.constraint_column_usage ccu
+            ON ccu.constraint_name = tc.constraint_name
+
+          JOIN fk_tree ft
+            ON ccu.table_name = ft.child_table
+
+          WHERE tc.constraint_type = 'FOREIGN KEY'
+            AND NOT tc.table_name = ANY(ft.visited)
+      )
+
+      SELECT DISTINCT child_table, level
+      FROM fk_tree
+      ORDER BY level DESC;
+      `,
+        [tableName]
+      );
+
+      console.log(
+        `Dependencies found: ${dependencyTree.length}`
+      );
+
+      const processed = new Set<string>();
+
+      for (const row of dependencyTree) {
+
+        if (processed.has(row.child_table)) {
+          continue;
+        }
+
+        processed.add(row.child_table);
+
+        await this.clearTableAndResetSeq(
+          queryRunner,
+          row.child_table
+        );
+      }
+
+      await this.clearTableAndResetSeq(
+        queryRunner,
+        tableName
+      );
+
+      await queryRunner.commitTransaction();
+
+      console.log(
+        `Transaction committed for ${tableName}`
+      );
+
+    } catch (error) {
+
+      await queryRunner.rollbackTransaction();
+
+      console.error(
+        `Recursive delete failed for ${tableName}`,
+        error
+      );
+
+      throw error;
+
+    } finally {
+
+      await queryRunner.release();
+    }
+  }
+
+  private async clearTableAndResetSeq(
+    queryRunner: any,
+    table: string
+  ): Promise<void> {
+
+    console.log(`TRUNCATING TABLE: ${table}`);
+
+    await queryRunner.query(
+      `TRUNCATE TABLE "${table}" RESTART IDENTITY CASCADE`
+    );
+  }
 
 }

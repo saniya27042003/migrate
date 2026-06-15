@@ -1,6 +1,7 @@
 /* 1. Reset & Global Dashboard Wrapper */
 .dashboard {
     display: flex;
+    /* position: relative; */
     flex-direction: column;
     height: 100vh;
     /* Covers the full vertical height of the screen */
@@ -276,4 +277,43 @@ button:disabled {
   height: 100%;
   background: #4680ff;
   transition: width 0.3s ease;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between; /* Title left, button right */
+    align-items: center;
+    padding: 15px 25px;
+    background: #ffffff;
+    border-bottom: 1px solid #cbd5e1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.delete-sequence-btn {
+    padding: 14px 20px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    color: #334155;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.delete-sequence-btn:hover {
+    border-color: #94a3b8;
+    background: #f1f5f9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.delete-sequence-btn.success {
+    background: #ecfdf5;
+    border-color: #34d399;
+    color: #065f46;
 }

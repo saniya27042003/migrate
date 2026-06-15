@@ -10,13 +10,15 @@ import { MigrationDashboardComponent } from './components/migration-dashboard/mi
 import { HttpClientModule } from '@angular/common/http';
 import { LoginComponent } from './login/login.component';
 import { DatabaseConnectionComponent } from './database-connection/database-connection.component';
+import { DeleteSequenceComponent } from './delete-sequence/delete-sequence.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     MigrationDashboardComponent,
     LoginComponent,
-    DatabaseConnectionComponent
+    DatabaseConnectionComponent,
+    DeleteSequenceComponent
   ],
   imports: [
     BrowserModule,

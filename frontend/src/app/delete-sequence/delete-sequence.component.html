@@ -1,0 +1,99 @@
+<div class="cleanup-container">
+
+    <div class="header-section">
+
+        <h2>Delete & Sequence Tables</h2>
+
+        <button class="btn-back" routerLink="/migration">
+            Back
+        </button>
+
+    </div>
+
+    <div class="status-strip">
+
+        <div class="status-indicator connected">
+
+            <span class="dot"></span>
+
+            <strong>
+                Using Existing Database Connection
+            </strong>
+
+        </div>
+
+    </div>
+
+    <div class="dropzone-area" [class.file-loaded]="selectedFile" (drop)="onFileDropped($event)"
+        (dragover)="onDragOver($event)">
+
+        <div *ngIf="!selectedFile" class="prompt-content">
+
+            <div class="upload-icon">
+                📂
+            </div>
+
+            <h3>Upload CSV File</h3>
+
+            <p>
+                Drag & Drop or Select File
+            </p>
+            <small class="file-note">
+                Supported formats: .csv, .xlsx only
+            </small>
+
+            <label class="file-label">
+
+                Choose File
+
+                <input type="file" hidden (change)="onFileSelected($event)" accept=".csv,.xlsx" />
+
+            </label>
+
+        </div>
+
+        <div *ngIf="selectedFile" class="file-details">
+
+            <div class="file-left">
+
+                <span class="file-icon">📄</span>
+
+                <div class="meta">
+
+                    <p>{{ selectedFile?.name }}</p>
+
+                    <p>
+                        {{ selectedFile ? (selectedFile.size / 1024).toFixed(2) : 0 }} KB
+                    </p>
+
+                </div>
+
+            </div>
+
+            <button class="btn-clear" (click)="selectedFile = null">
+
+                Remove
+
+            </button>
+
+        </div>
+
+    </div>
+
+    <div class="action-bar">
+
+        <button class="btn-execute" [disabled]="!selectedFile || isLoading" (click)="executeDeleteSequence()">
+
+            {{ isLoading ? 'Processing...' : 'Execute Delete' }}
+
+        </button>
+
+    </div>
+
+    <div *ngIf="feedbackMessage" class="alert-banner error">
+
+        {{feedbackMessage}}
+
+    </div>
+
+</div>
